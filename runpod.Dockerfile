@@ -63,13 +63,7 @@ esac\n\
 ' > /app/start_handler.sh && chmod +x /app/start_handler.sh
 
 # Pre-download models to improve cold start times
-RUN python3 -c "
-try:
-    from video.config import device
-    print(f'Device configured: {device}')
-except ImportError:
-    print('Device configuration not available')
-" || true
+RUN python3 -c "try: from video.config import device; print(f'Device configured: {device}'); except ImportError: print('Device configuration not available')" || true
 
 # Set environment variables for RunPod
 ENV RUNPOD_SERVERLESS=true
