@@ -74,3 +74,14 @@
 - ⏳ Awaiting first automated build trigger
 
 ---
+
+## 2025-07-26 14:00
+
+### Docker Build Fix for RunPod Serverless |TASK:TASK-2025-07-26-002|
+- **What**: Fixed a critical Docker build error in `runpod.Dockerfile`.
+- **Why**: The GitHub Actions build was failing with a `dockerfile parse error`. The `RUN` instruction containing a multi-line Python script was not being parsed correctly by Docker buildx.
+- **How**: The problematic multi-line `RUN` command was refactored into a single-line command. This ensures the embedded Python script is correctly interpreted by the shell and Docker's parser.
+- **Issues**: Initial attempts using `replace_regex` timed out, requiring a more direct `replace` operation. This highlighted a limitation in handling large, multi-line regex replacements efficiently.
+- **Result**: The `runpod.Dockerfile` is now syntactically correct, unblocking the CI/CD pipeline and allowing for successful automated builds.
+
+---
