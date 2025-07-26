@@ -16,6 +16,12 @@ DATABASE_POOL_SIZE=20
 # Authentication
 JWT_SECRET=your-secret-key-here
 SESSION_SECRET=your-session-secret
+
+# S3 Storage (for RunPod)
+AWS_ACCESS_KEY_ID=your-s3-access-key
+AWS_SECRET_ACCESS_KEY=your-s3-secret-key
+S3_ENDPOINT_URL=https://your-s3-endpoint.com
+S3_BUCKET_NAME=your-s3-bucket-name
 ```
 
 ### Optional Variables

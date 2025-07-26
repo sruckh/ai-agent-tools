@@ -85,3 +85,20 @@
 - **Result**: The `runpod.Dockerfile` is now syntactically correct, unblocking the CI/CD pipeline and allowing for successful automated builds.
 
 ---
+
+## 2025-07-26 15:00
+
+### RunPod Serverless Endpoint Implementation |TASK:TASK-2025-07-26-003|
+- **What**: Implemented all remaining RunPod serverless endpoints to match the functionality of the original FastAPI server.
+- **Why**: To ensure the serverless deployment is a complete and viable replacement for the original containerized application.
+- **How**: Created and integrated modular handlers for storage, audio, and video processing. This involved refactoring existing FastAPI endpoint logic into the new serverless handler structure.
+- **Issues**: The initial `tts_handler` was incorrectly trying to handle all audio operations. This was resolved by creating a dedicated `audio_handler` for both TTS and STT.
+- **Result**: The RunPod serverless implementation is now feature-complete, with all original endpoints successfully migrated to the new architecture.
+
+#### Implementation Details
+- **Storage Handler**: Implemented `upload`, `download`, `delete`, and `status` operations for S3-compatible storage.
+- **Audio Handler**: Created a unified audio handler for both TTS (Kokoro, Chatterbox) and STT (transcription) operations.
+- **Video Handler**: Implemented video merging, colorkey overlay, and captioned video generation.
+- **Configuration**: Updated `CONFIG.md` to include required S3 environment variables.
+
+---

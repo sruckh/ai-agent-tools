@@ -228,8 +228,10 @@ class RunPodTTSHandler(RunPodBaseHandler):
                     f.write(response.content)
             
             # Generate TTS audio
+            from video.tts_chatterbox import TTSChatterbox
+            chatterbox = TTSChatterbox()
             logger.info(f"Generating ChatterboxTTS for text length: {len(text)}")
-            self.tts.chatterbox(
+            chatterbox.chatterbox(
                 text=text,
                 output_path=local_audio_path,
                 sample_audio_path=sample_audio_path,
@@ -307,8 +309,23 @@ class RunPodTTSHandler(RunPodBaseHandler):
 # Handler entry point for RunPod
 def handler(event):
     """Main RunPod handler entry point."""
-    tts_handler = RunPodTTSHandler()
-    return tts_handler.handler(event)
+    input_data = event.get("input", {})
+    handler_type = input_data.get("handler", "tts")  # Default to tts handler
+
+    if handler_type == "audio":
+        from audio_handler import RunPodAudioHandler
+        audio_handler = RunPodAudioHandler()
+        return audio_handler.handler(event)
+    elif handler_type == "video":
+        from video_handler import RunPodVideoHandler
+        video_handler = RunPodVideoHandler()
+        return video_handler.handler(event)
+    elif handler_type == "storage":
+        from storage_handler import RunPodStorageManagerHandler
+        storage_handler = RunPodStorageManagerHandler()
+        return storage_handler.handler(event)
+    else:
+        return {"error": f"Unknown handler type: {handler_type}"}
 
 
 # For local testing
