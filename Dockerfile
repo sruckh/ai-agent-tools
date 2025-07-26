@@ -17,6 +17,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY api_server /app/api_server
 COPY utils /app/utils
 COPY video /app/video
+COPY assets /app/assets
 COPY server.py /app/server.py
 
 ENV PYTHONUNBUFFERED=1
