@@ -14,3 +14,6 @@ matplotlib
 Pillow
 nltk
 imageio
+runpod
+boto3
+botocore
