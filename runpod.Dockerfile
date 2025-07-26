@@ -33,33 +33,33 @@ RUN python3 -c "import re; with open('server.py', 'r') as f: content = f.read();
 ENV PYTHONPATH=/app:$PYTHONPATH
 
 # Create entrypoint script for different handlers
-RUN echo '#!/bin/bash
-HANDLER_TYPE=${HANDLER_TYPE:-tts}
-cd /app/runpod_handlers
-
-case $HANDLER_TYPE in
-    tts)
-        echo "Starting TTS Handler..."
-        python tts_handler.py
-        ;;
-    video)
-        echo "Starting Video Handler..."
-        python video_handler.py
-        ;;
-    storage)
-        echo "Starting Storage Handler..."
-        python storage_handler.py
-        ;;
-    audio)
-        echo "Starting Audio Handler..."
-        python audio_handler.py
-        ;;
-    *)
-        echo "Unknown handler type: $HANDLER_TYPE"
-        echo "Available handlers: tts, video, storage, audio"
-        exit 1
-        ;;
-esac
+RUN echo '#!/bin/bash\n\
+HANDLER_TYPE=${HANDLER_TYPE:-tts}\n\
+cd /app/runpod_handlers\n\
+\n\
+case $HANDLER_TYPE in\n\
+    tts)\n\
+        echo "Starting TTS Handler..."\n\
+        python tts_handler.py\n\
+        ;;\n\
+    video)\n\
+        echo "Starting Video Handler..."\n\
+        python video_handler.py\n\
+        ;;\n\
+    storage)\n\
+        echo "Starting Storage Handler..."\n\
+        python storage_handler.py\n\
+        ;;\n\
+    audio)\n\
+        echo "Starting Audio Handler..."\n\
+        python audio_handler.py\n\
+        ;;\n\
+    *)\n\
+        echo "Unknown handler type: $HANDLER_TYPE"\n\
+        echo "Available handlers: tts, video, storage, audio"\n\
+        exit 1\n\
+        ;;\n\
+esac\n\
 ' > /app/start_handler.sh && chmod +x /app/start_handler.sh
 
 # Pre-download models to improve cold start times

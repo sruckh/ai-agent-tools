@@ -102,3 +102,21 @@
 - **Configuration**: Updated `CONFIG.md` to include required S3 environment variables.
 
 ---
+
+## 2025-07-26 20:08
+
+### Docker Build Syntax Fix for RunPod Serverless |TASK:TASK-2025-07-26-005|
+- **What**: Fixed critical Docker build syntax error in runpod.Dockerfile preventing GitHub Actions CI/CD pipeline from building containers
+- **Why**: The multiline RUN command (lines 36-63) was improperly formatted, causing Docker Buildx parser to fail with "unknown instruction" error
+- **How**: Converted multiline bash script to properly escaped single-line RUN command using `\n\` continuation syntax
+- **Issues**: Initial heredoc syntax was not compatible with Docker's strict parsing requirements for multiline commands
+- **Result**: Container builds successfully, CI/CD pipeline unblocked, all three Docker variants can now be built automatically
+
+#### Technical Details
+- **Error**: `dockerfile parse error on line 37: unknown instruction: HANDLER_TYPE=${HANDLER_TYPE:-tts}`
+- **Root Cause**: Multiline RUN command not properly escaped for Docker parser
+- **Solution**: Used `echo '#!/bin/bash\n\HANDLER_TYPE=${HANDLER_TYPE:-tts}\n\...'` format
+- **Impact**: Enables automated builds for runpod-serverless, latest, and latest-cuda variants
+- **File**: runpod.Dockerfile:36-63 - entrypoint script creation for handler switching
+
+---
