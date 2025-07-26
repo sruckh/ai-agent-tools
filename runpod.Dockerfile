@@ -46,9 +46,17 @@ case $HANDLER_TYPE in
         echo "Starting Video Handler..."
         python video_handler.py
         ;;
+    storage)
+        echo "Starting Storage Handler..."
+        python storage_handler.py
+        ;;
+    audio)
+        echo "Starting Audio Handler..."
+        python audio_handler.py
+        ;;
     *)
         echo "Unknown handler type: $HANDLER_TYPE"
-        echo "Available handlers: tts, video"
+        echo "Available handlers: tts, video, storage, audio"
         exit 1
         ;;
 esac
