@@ -144,3 +144,21 @@
 - **CI/CD Reliability**: Syntax errors in Dockerfile can completely block deployment pipeline
 
 ---
+
+## 2025-07-26 23:00
+
+### FFmpeg Package Configuration Fix |TASK:TASK-2025-07-26-007|
+- **What**: Fixed invalid FFmpeg package name causing GitHub Actions Docker build failures
+- **Why**: Invalid package name `ffmpeg-dev` was not recognized in Debian repositories, blocking container image builds
+- **How**: Replaced with correct Debian development packages: libavcodec-dev, libavformat-dev, libavutil-dev, libswresample-dev, libswscale-dev
+- **Issues**: None - straightforward package naming correction
+- **Result**: All container variants now build successfully on GitHub Actions
+
+#### Package Details
+- **Replace**: `ffmpeg-dev` (invalid package name)
+- **Correct**: `libavcodec-dev libavformat-dev libavutil-dev libswresample-dev libswscale-dev`
+- **Environment**: Debian-based container builds using GitHub Actions
+- **Impact**: Unblocks automated CI/CD pipeline for all Docker variants
+- **Validated**: Build passes across all three container variants (standard, CUDA, runpod-serverless)
+
+---

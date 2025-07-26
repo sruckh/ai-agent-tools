@@ -8,7 +8,11 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     ffmpeg \
-    ffmpeg-dev \
+    libavcodec-dev \
+    libavformat-dev \
+    libavutil-dev \
+    libswresample-dev \
+    libswscale-dev \
     git \
     curl \
     && rm -rf /var/lib/apt/lists/*
