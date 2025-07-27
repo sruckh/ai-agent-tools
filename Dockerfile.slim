@@ -1,0 +1,34 @@
+# Slim Base Container - Dependencies installed at runtime
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Only install absolutely essential runtime dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy application code (minimal footprint)
+COPY api_server /app/api_server
+COPY utils /app/utils
+COPY video /app/video
+COPY assets /app/assets
+COPY server.py /app/server.py
+COPY requirements.txt /app/requirements.txt
+
+# Copy runtime installation scripts
+COPY scripts/install-runtime-deps.sh /app/scripts/
+COPY scripts/startup.sh /app/scripts/
+RUN chmod +x /app/scripts/*.sh
+
+# Environment configuration
+ENV PYTHONUNBUFFERED=1
+ENV RUNTIME_INSTALL=true
+ENV CACHE_DIR=/tmp/ai-agents-cache
+
+# Create cache directory
+RUN mkdir -p ${CACHE_DIR}
+
+# Startup script handles all dependency installation
+CMD ["/app/scripts/startup.sh"]

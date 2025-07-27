@@ -1,0 +1,64 @@
+# Ultra-Slim RunPod Serverless Container
+# Absolute minimal base - all dependencies installed at runtime
+FROM ubuntu:22.04
+
+WORKDIR /app
+
+# Only the most essential packages needed to bootstrap
+RUN apt-get update && apt-get install -y \
+    curl \
+    python3.10 \
+    python3-pip \
+    && ln -sf /usr/bin/python3 /usr/bin/python \
+    && ln -sf /usr/bin/pip3 /usr/bin/pip \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Copy application code and configs
+COPY api_server /app/api_server
+COPY utils /app/utils
+COPY video /app/video
+COPY assets /app/assets
+COPY server.py /app/server.py
+COPY requirements.txt /app/requirements.txt
+
+# Copy runtime installation scripts
+COPY scripts/install-runpod-deps.sh /app/scripts/
+COPY scripts/install-runtime-deps.sh /app/scripts/
+COPY scripts/startup-runpod.sh /app/scripts/
+RUN chmod +x /app/scripts/*.sh
+
+# Create runpod_handlers directory
+RUN mkdir -p runpod_handlers
+
+# Extract handler code (lightweight operation)
+RUN python3 -c "import re; \
+with open('server.py', 'r') as f: content = f.read(); \
+base_match = re.search(r\"\"\"runpod_base_code = '''(.*?)'''\"\"\", content, re.DOTALL); \
+if base_match: \
+    with open('runpod_handlers/runpod_base.py', 'w') as f: f.write(base_match.group(1)); \
+tts_match = re.search(r\"\"\"tts_handler_code = '''(.*?)'''\"\"\", content, re.DOTALL); \
+if tts_match: \
+    with open('runpod_handlers/tts_handler.py', 'w') as f: f.write(tts_match.group(1)); \
+video_match = re.search(r\"\"\"video_handler_code = '''(.*?)'''\"\"\", content, re.DOTALL); \
+if video_match: \
+    with open('runpod_handlers/video_handler.py', 'w') as f: f.write(video_match.group(1))"
+
+# Environment configuration for RunPod
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app:$PYTHONPATH
+ENV RUNPOD_SERVERLESS=true
+ENV HANDLER_TYPE=tts
+ENV RUNTIME_INSTALL=true
+ENV RUNPOD_OPTIMIZED=true
+ENV CACHE_DIR=/tmp/runpod-cache
+
+# Create cache directory
+RUN mkdir -p ${CACHE_DIR}
+
+# Health check (lightweight)
+HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
+    CMD python3 -c "import sys; sys.exit(0)"
+
+# RunPod startup script handles dependency installation and handler selection
+CMD ["/app/scripts/startup-runpod.sh"]

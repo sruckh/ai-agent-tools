@@ -1,0 +1,42 @@
+# Slim CUDA Container - CUDA installed at runtime only when needed
+FROM ubuntu:22.04
+
+WORKDIR /app
+
+# Only install absolutely essential base packages
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    python3.10 \
+    python3-pip \
+    && ln -sf /usr/bin/python3 /usr/bin/python \
+    && ln -sf /usr/bin/pip3 /usr/bin/pip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy application code
+COPY api_server /app/api_server
+COPY utils /app/utils
+COPY video /app/video
+COPY assets /app/assets
+COPY server.py /app/server.py
+COPY requirements.txt /app/requirements.txt
+
+# Copy runtime installation scripts
+COPY scripts/install-cuda-runtime.sh /app/scripts/
+COPY scripts/install-runtime-deps.sh /app/scripts/
+COPY scripts/startup.sh /app/scripts/
+RUN chmod +x /app/scripts/*.sh
+
+# Environment configuration
+ENV PYTHONUNBUFFERED=1
+ENV RUNTIME_INSTALL=true
+ENV CUDA_RUNTIME_INSTALL=true
+ENV CACHE_DIR=/tmp/ai-agents-cache
+
+# Create cache directory
+RUN mkdir -p ${CACHE_DIR}
+
+EXPOSE 8000
+
+# Startup script detects GPU and installs CUDA only if needed
+CMD ["/app/scripts/startup.sh"]
