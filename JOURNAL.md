@@ -317,3 +317,42 @@
 - **User Communication**: Clarify which logs correspond to which build steps
 
 ---
+
+## 2025-07-27 20:30
+
+### RunPod Serverless API Documentation Complete |TASK:TASK-2025-07-27-005|
+- **What**: Created comprehensive RunPod serverless API documentation with all 13 endpoints, curl examples, and testing JSON
+- **Why**: API.md contained only template content with no actual endpoint documentation for RunPod serverless deployment
+- **How**: Analyzed handler implementations, documented all operations with parameters, created working examples for both curl and RunPod console
+- **Issues**: None - clean implementation with accurate technical details from actual codebase analysis
+- **Result**: Production-ready API documentation enabling developers to integrate with all RunPod serverless endpoints
+
+#### Implementation Details
+- **TTS Handler**: 3 operations (generate_kokoro_tts, generate_chatterbox_tts, get_kokoro_voices)
+- **Audio Handler**: 1 operation (transcribe) using Whisper STT model
+- **Video Handler**: 3 operations (generate_captioned_video, merge_videos, add_colorkey_overlay)
+- **Storage Handler**: 4 operations (upload, download, delete, status) with S3-compatible storage
+- **Documentation Format**: Parameters tables, curl examples, RunPod console JSON, response examples
+
+#### Technical Achievements
+- **Complete Coverage**: All 13 endpoint operations documented with accurate parameters
+- **Working Examples**: Ready-to-use curl commands and RunPod console JSON for testing
+- **Response Documentation**: Detailed response structures with realistic example data
+- **Error Handling**: Comprehensive error types and response format documentation
+- **Integration Guide**: Authentication, base URLs, async operations, webhooks
+
+#### Key Sections Added
+- **Authentication**: RunPod API key requirements and header format
+- **Request Structure**: Standard input object format for all operations
+- **Handler Types**: Complete documentation for each of 4 handler types
+- **Rate Limiting**: Operational constraints and limits
+- **Async Operations**: Job status checking and webhook notifications
+- **Environment Variables**: Required S3 configuration for deployment
+
+#### Production Impact
+- **Developer Onboarding**: Clear documentation enables rapid integration
+- **Testing Support**: RunPod console JSON examples ready for immediate testing
+- **Maintenance**: Accurate documentation reduces support burden
+- **Deployment**: Complete environment variable and configuration guidance
+
+---
