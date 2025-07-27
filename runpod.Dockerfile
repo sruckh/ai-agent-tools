@@ -4,19 +4,21 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Install only curl and wget for runtime dependency downloads
-RUN apt-get update && apt-get install -y \
+# Install only essential tools for downloads - NO other dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     wget \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
-# Copy application code and configs
+# Copy ONLY application code - NO dependency installations
 COPY api_server /app/api_server
-COPY utils /app/utils
+COPY utils /app/utils  
 COPY video /app/video
 COPY assets /app/assets
 COPY server.py /app/server.py
+
+# Copy requirements.txt but DO NOT install it
 COPY requirements.txt /app/requirements.txt
 
 # Copy runtime installation scripts
@@ -27,7 +29,7 @@ RUN chmod +x /app/scripts/*.sh
 # Create runpod_handlers directory
 RUN mkdir -p runpod_handlers
 
-# Extract handler code (lightweight operation)
+# Extract handler code (lightweight operation using only Python standard library)
 RUN python3 -c "import re; \
 with open('server.py', 'r') as f: content = f.read(); \
 base_match = re.search(r\"\"\"runpod_base_code = '''(.*?)'''\"\"\", content, re.DOTALL); \
@@ -49,9 +51,10 @@ ENV RUNTIME_INSTALL=true
 ENV RUNPOD_OPTIMIZED=true
 ENV CACHE_DIR=/runpod-volume
 
-# Health check (lightweight)
+# Health check (lightweight - using only standard library)
 HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
     CMD python3 -c "import sys; sys.exit(0)"
 
-# RunPod startup script handles dependency installation and handler selection
+# IMPORTANT: NO pip installs, NO apt installs beyond curl/wget
+# ALL dependencies installed at runtime via startup script
 CMD ["/app/scripts/startup-runpod.sh"]
