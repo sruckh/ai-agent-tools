@@ -10,7 +10,7 @@ echo "🚀 Starting RunPod handler..."
 HANDLER_TYPE=${HANDLER_TYPE:-tts}
 RUNTIME_INSTALL=${RUNTIME_INSTALL:-true}
 RUNPOD_OPTIMIZED=${RUNPOD_OPTIMIZED:-true}
-CACHE_DIR=${CACHE_DIR:-/tmp/runpod-cache}
+CACHE_DIR=${CACHE_DIR:-/runpod-volume}
 
 # Create cache directory
 mkdir -p "$CACHE_DIR"

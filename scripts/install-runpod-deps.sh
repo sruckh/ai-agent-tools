@@ -7,11 +7,12 @@ set -e
 echo "🚀 Installing RunPod-specific dependencies..."
 
 # Environment variables
-CACHE_DIR=${CACHE_DIR:-/tmp/runpod-cache}
+CACHE_DIR=${CACHE_DIR:-/runpod-volume}
 HANDLER_TYPE=${HANDLER_TYPE:-tts}
+PIP_CACHE=${PIP_CACHE:-$CACHE_DIR/pip}
 
 # Create cache directories
-mkdir -p "$CACHE_DIR/pip" "$CACHE_DIR/models"
+mkdir -p "$PIP_CACHE" "$CACHE_DIR/models"
 
 echo "📦 Installing system dependencies for handler: $HANDLER_TYPE"
 
@@ -64,11 +65,11 @@ rm -rf /var/lib/apt/lists/*
 echo "🐍 Installing Python dependencies..."
 
 # Install base requirements first
-pip install --upgrade pip --cache-dir "$CACHE_DIR/pip"
-pip install --no-cache-dir -r requirements.txt --cache-dir "$CACHE_DIR/pip"
+pip install --upgrade pip --cache-dir "$PIP_CACHE"
+pip install -r requirements.txt --cache-dir "$PIP_CACHE"
 
 # Install RunPod-specific packages
-pip install runpod --cache-dir "$CACHE_DIR/pip"
+pip install runpod --cache-dir "$PIP_CACHE"
 
 # Install CUDA toolkit first (RunPod serverless has GPUs)
 echo "🔧 Installing CUDA toolkit 12.6..."
@@ -85,7 +86,7 @@ export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH
 
 # Install PyTorch with CUDA 12.6 support (RunPod has GPUs)
 echo "🔥 Installing PyTorch 2.7.0 with CUDA 12.6 support"
-pip install torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0 --index-url https://download.pytorch.org/whl/cu126 --cache-dir "$CACHE_DIR/pip"
+pip install torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0 --index-url https://download.pytorch.org/whl/cu126 --cache-dir "$PIP_CACHE"
 
 # Install flash-attention based on Python version
 PYTHON_VERSION=$(python -c "import sys; print(f'{sys.version_info.major}{sys.version_info.minor}')")
@@ -93,14 +94,14 @@ echo "🔍 Detected Python version: $PYTHON_VERSION"
 
 if [ "$PYTHON_VERSION" = "310" ]; then
     echo "Installing flash-attention for Python 3.10"
-    pip install https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.0.post2/flash_attn-2.8.0.post2+cu12torch2.7cxx11abiFALSE-cp310-cp310-linux_x86_64.whl --cache-dir "$CACHE_DIR/pip"
+    pip install https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.0.post2/flash_attn-2.8.0.post2+cu12torch2.7cxx11abiFALSE-cp310-cp310-linux_x86_64.whl --cache-dir "$PIP_CACHE"
 elif [ "$PYTHON_VERSION" = "311" ]; then
     echo "Installing flash-attention for Python 3.11"
-    pip install https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.0.post2/flash_attn-2.8.0.post2+cu12torch2.7cxx11abiFALSE-cp311-cp311-linux_x86_64.whl --cache-dir "$CACHE_DIR/pip"
+    pip install https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.0.post2/flash_attn-2.8.0.post2+cu12torch2.7cxx11abiFALSE-cp311-cp311-linux_x86_64.whl --cache-dir "$PIP_CACHE"
 else
     echo "⚠️  Python version $PYTHON_VERSION not supported for flash-attention precompiled wheels"
     echo "   Trying to install from source..."
-    pip install flash-attn --no-build-isolation --cache-dir "$CACHE_DIR/pip" || echo "Flash attention installation failed, continuing..."
+    pip install flash-attn --no-build-isolation --cache-dir "$PIP_CACHE" || echo "Flash attention installation failed, continuing..."
 fi
 
 echo "📋 Pre-warming models for faster cold starts..."

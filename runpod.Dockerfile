@@ -1,81 +1,57 @@
-# RunPod Serverless Dockerfile
-# Optimized for GPU-accelerated serverless deployment
-FROM runpod/pytorch:2.1.0-py3.10-cuda11.8.0-devel-ubuntu22.04
+# Ultra-Slim RunPod Serverless Container
+# Minimal base - ALL dependencies installed at runtime on server
+FROM python:3.10-slim
 
-# Set working directory
 WORKDIR /app
 
-# Install system dependencies
+# Install only curl and wget for runtime dependency downloads
 RUN apt-get update && apt-get install -y \
-    ffmpeg \
-    libavcodec-dev \
-    libavformat-dev \
-    libavutil-dev \
-    libswresample-dev \
-    libswscale-dev \
-    git \
     curl \
-    && rm -rf /var/lib/apt/lists/*
+    wget \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
-# Copy requirements first for better Docker layer caching
-COPY requirements.txt .
+# Copy application code and configs
+COPY api_server /app/api_server
+COPY utils /app/utils
+COPY video /app/video
+COPY assets /app/assets
+COPY server.py /app/server.py
+COPY requirements.txt /app/requirements.txt
 
-# Install Python dependencies
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+# Copy runtime installation scripts
+COPY scripts/install-runpod-deps.sh /app/scripts/
+COPY scripts/startup-runpod.sh /app/scripts/
+RUN chmod +x /app/scripts/*.sh
 
-# Copy application code
-COPY . .
-
-# Create runpod_handlers directory and extract handler files
+# Create runpod_handlers directory
 RUN mkdir -p runpod_handlers
 
-# Extract RunPod base handler code from server.py
-RUN python3 -c "import re; with open('server.py', 'r') as f: content = f.read(); base_match = re.search(r\"\"\"runpod_base_code = '''(.*?)'''\"\"\", content, re.DOTALL); if base_match: with open('runpod_handlers/runpod_base.py', 'w') as f: f.write(base_match.group(1)); tts_match = re.search(r\"\"\"tts_handler_code = '''(.*?)'''\"\"\", content, re.DOTALL); if tts_match: with open('runpod_handlers/tts_handler.py', 'w') as f: f.write(tts_match.group(1)); video_match = re.search(r\"\"\"video_handler_code = '''(.*?)'''\"\"\", content, re.DOTALL); if video_match: with open('runpod_handlers/video_handler.py', 'w') as f: f.write(video_match.group(1))"
+# Extract handler code (lightweight operation)
+RUN python3 -c "import re; \
+with open('server.py', 'r') as f: content = f.read(); \
+base_match = re.search(r\"\"\"runpod_base_code = '''(.*?)'''\"\"\", content, re.DOTALL); \
+if base_match: \
+    with open('runpod_handlers/runpod_base.py', 'w') as f: f.write(base_match.group(1)); \
+tts_match = re.search(r\"\"\"tts_handler_code = '''(.*?)'''\"\"\", content, re.DOTALL); \
+if tts_match: \
+    with open('runpod_handlers/tts_handler.py', 'w') as f: f.write(tts_match.group(1)); \
+video_match = re.search(r\"\"\"video_handler_code = '''(.*?)'''\"\"\", content, re.DOTALL); \
+if video_match: \
+    with open('runpod_handlers/video_handler.py', 'w') as f: f.write(video_match.group(1))"
 
-# Set Python path to include current directory
+# Environment configuration for RunPod
+ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app:$PYTHONPATH
-
-# Create entrypoint script for different handlers
-RUN echo '#!/bin/bash\n\
-HANDLER_TYPE=${HANDLER_TYPE:-tts}\n\
-cd /app/runpod_handlers\n\
-\n\
-case $HANDLER_TYPE in\n\
-    tts)\n\
-        echo "Starting TTS Handler..."\n\
-        python tts_handler.py\n\
-        ;;\n\
-    video)\n\
-        echo "Starting Video Handler..."\n\
-        python video_handler.py\n\
-        ;;\n\
-    storage)\n\
-        echo "Starting Storage Handler..."\n\
-        python storage_handler.py\n\
-        ;;\n\
-    audio)\n\
-        echo "Starting Audio Handler..."\n\
-        python audio_handler.py\n\
-        ;;\n\
-    *)\n\
-        echo "Unknown handler type: $HANDLER_TYPE"\n\
-        echo "Available handlers: tts, video, storage, audio"\n\
-        exit 1\n\
-        ;;\n\
-esac\n\
-' > /app/start_handler.sh && chmod +x /app/start_handler.sh
-
-# Pre-download models to improve cold start times
-RUN python3 -c "try: from video.config import device; print(f'Device configured: {device}'); except ImportError: print('Device configuration not available')" || true
-
-# Set environment variables for RunPod
 ENV RUNPOD_SERVERLESS=true
 ENV HANDLER_TYPE=tts
+ENV RUNTIME_INSTALL=true
+ENV RUNPOD_OPTIMIZED=true
+ENV CACHE_DIR=/runpod-volume
 
-# Health check
+# Health check (lightweight)
 HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
     CMD python3 -c "import sys; sys.exit(0)"
 
-# Default command
-CMD ["/app/start_handler.sh"]
+# RunPod startup script handles dependency installation and handler selection
+CMD ["/app/scripts/startup-runpod.sh"]

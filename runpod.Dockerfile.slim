@@ -1,16 +1,13 @@
 # Ultra-Slim RunPod Serverless Container
-# Absolute minimal base - all dependencies installed at runtime
-FROM ubuntu:22.04
+# Minimal base - ALL dependencies installed at runtime on server
+FROM python:3.10-slim
 
 WORKDIR /app
 
-# Only the most essential packages needed to bootstrap
+# Install only curl and wget for runtime dependency downloads
 RUN apt-get update && apt-get install -y \
     curl \
-    python3.10 \
-    python3-pip \
-    && ln -sf /usr/bin/python3 /usr/bin/python \
-    && ln -sf /usr/bin/pip3 /usr/bin/pip \
+    wget \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
@@ -24,7 +21,6 @@ COPY requirements.txt /app/requirements.txt
 
 # Copy runtime installation scripts
 COPY scripts/install-runpod-deps.sh /app/scripts/
-COPY scripts/install-runtime-deps.sh /app/scripts/
 COPY scripts/startup-runpod.sh /app/scripts/
 RUN chmod +x /app/scripts/*.sh
 
@@ -51,10 +47,7 @@ ENV RUNPOD_SERVERLESS=true
 ENV HANDLER_TYPE=tts
 ENV RUNTIME_INSTALL=true
 ENV RUNPOD_OPTIMIZED=true
-ENV CACHE_DIR=/tmp/runpod-cache
-
-# Create cache directory
-RUN mkdir -p ${CACHE_DIR}
+ENV CACHE_DIR=/runpod-volume
 
 # Health check (lightweight)
 HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
