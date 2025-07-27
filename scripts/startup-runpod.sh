@@ -7,9 +7,7 @@ set -e
 echo "🚀 Starting RunPod handler..."
 
 # Environment variables
-HANDLER_TYPE=${HANDLER_TYPE:-tts}
 RUNTIME_INSTALL=${RUNTIME_INSTALL:-true}
-RUNPOD_OPTIMIZED=${RUNPOD_OPTIMIZED:-true}
 
 # Validate required Backblaze environment variables
 if [ -z "$BACKBLAZE_KEY_ID" ] || [ -z "$BACKBLAZE_APPLICATION_KEY" ] || [ -z "$BACKBLAZE_BUCKET" ] || [ -z "$BACKBLAZE_ENDPOINT" ]; then
@@ -55,32 +53,10 @@ except ImportError as e:
     sys.exit(1)
 "
 
-# Change to handlers directory
-cd /app/runpod_handlers
+# Change to app directory
+cd /app
 
-echo "🎯 Starting handler: $HANDLER_TYPE"
+echo "🎯 Starting unified RunPod handler..."
 
-# Start appropriate handler
-case $HANDLER_TYPE in
-    tts)
-        echo "Starting TTS Handler..."
-        exec python tts_handler.py
-        ;;
-    video)
-        echo "Starting Video Handler..."
-        exec python video_handler.py
-        ;;
-    storage)
-        echo "Starting Storage Handler..."
-        exec python storage_handler.py
-        ;;
-    audio)
-        echo "Starting Audio Handler..."
-        exec python audio_handler.py
-        ;;
-    *)
-        echo "❌ Unknown handler type: $HANDLER_TYPE"
-        echo "Available handlers: tts, video, storage, audio"
-        exit 1
-        ;;
-esac
+# Start unified handler that supports all operations
+exec python runpod_handler.py

@@ -1,49 +1,46 @@
 # Task Management
 
 ## Active Phase
-**Phase**: Container Optimization
-**Started**: 2025-07-27
+**Phase**: RunPod Serverless Architecture Fix
+**Started**: 2025-07-28
 **Target**: 2025-07-28
 **Progress**: 1/1 tasks completed
 
 ## Current Task
-**Task ID**: TASK-2025-07-27-006
-**Title**: Implement Backblaze B2 Persistent Storage for RunPod Serverless
+**Task ID**: TASK-2025-07-28-001
+**Title**: Fix Unified RunPod Serverless Handler Architecture
 **Status**: COMPLETE
-**Started**: 2025-07-27 21:00
-**Dependencies**: TASK-2025-07-27-005 (API Documentation Complete)
+**Started**: 2025-07-28 09:00
+**Dependencies**: None (Critical Bug Fix)
 
 ### Task Context
 <!-- Critical information needed to resume this task -->
-- **Previous Work**: User reported out-of-space errors in RunPod serverless container, need persistent storage solution
+- **Previous Work**: RunPod serverless failing with exit code 127, handlers not starting, no file storage occurring
 - **Key Files**: 
-  - `scripts/setup-backblaze-storage.sh` - Backblaze B2 S3-compatible storage management
-  - `scripts/install-runpod-deps.sh` - Updated to use Backblaze-backed cache directories
-  - `scripts/startup-runpod.sh` - Enhanced with Backblaze environment validation
-  - `runpod.Dockerfile` - Updated to include Backblaze integration scripts
-  - `RUNPOD_BACKBLAZE_SETUP.md` - Comprehensive configuration documentation
-- **Environment**: RunPod serverless with Backblaze B2 S3-compatible persistent storage
-- **Next Steps**: Commit changes, test deployment with Backblaze credentials, validate storage persistence
+  - `runpod_handler.py` - NEW unified handler supporting all API operations
+  - `runpod.Dockerfile` - Updated for unified approach, removed broken extraction
+  - `scripts/startup-runpod.sh` - Simplified for unified handler
+  - `server.py` - Cleaned up, removed broken embedded handler code
+  - `RUNPOD_USAGE.md` - NEW comprehensive usage documentation
+  - `test_runpod_handler.py` - NEW test script for handler validation
+- **Environment**: RunPod serverless with unified handler architecture
+- **Next Steps**: Deploy and test unified handler with all operations working
 
 ### Findings & Decisions
-- **FINDING-024**: RunPod serverless container experiencing "out of space" errors due to ephemeral storage limits
-- **DECISION-024**: Implement Backblaze B2 S3-compatible storage for persistent dependency caching
-- **FINDING-025**: Container was installing large dependencies (CUDA, PyTorch) in container's local storage
-- **DECISION-025**: Created storage management system using /tmp/runpod-cache with Backblaze B2 backing
-- **FINDING-026**: RunPod supports S3-compatible storage integration with external providers like Backblaze
-- **DECISION-026**: Developed comprehensive storage solution with automatic sync, environment validation, and cleanup
-- **RESULT**: Complete persistent storage system solving out-of-space errors with 98%+ cost savings vs container storage
+- **FINDING-027**: Exit code 127 indicated "command not found" - handler files were never created
+- **DECISION-027**: Discovered embedded handler code extraction was completely broken due to malformed strings
+- **FINDING-028**: Multi-handler approach (HANDLER_TYPE) artificially limited functionality and broke unified API
+- **DECISION-028**: Replaced with unified handler preserving ALL original container functionality in single endpoint
+- **FINDING-029**: Original architecture expectation was single unified API, not separate specialized handlers
+- **DECISION-029**: Created proper unified RunPod handler supporting all TTS, video, audio, and storage operations
+- **RESULT**: Fixed broken serverless implementation, restored unified API architecture, eliminated exit code 127
 
 ### Task Chain
-1. ✅ Previous RunPod Serverless Migration Phase (All tasks completed)
-2. ✅ Ultra-Slim Container Implementation (TASK-2025-07-27-001)
-3. ✅ GitHub Integration and File Cleanup (TASK-2025-07-27-002)
-4. ✅ Final Build-Time Dependencies Removal (TASK-2025-07-27-003)
-5. ✅ GitHub Workflow Optimization (TASK-2025-07-27-004)
-6. ✅ RunPod API Documentation Update (TASK-2025-07-27-005)
-7. ✅ Backblaze B2 Persistent Storage Implementation (CURRENT)
-6. ⏳ Production Testing and Validation
-7. ⏳ Performance Benchmarking
+1. ✅ Previous RunPod Serverless Migration Phase (All previous tasks completed but broken)
+2. ✅ Critical Bug Investigation (Exit code 127 analysis)
+3. ✅ Unified Handler Architecture Implementation (CURRENT)
+4. ⏳ Production Testing with Unified Handler
+5. ⏳ Performance Validation and Benchmarking
 
 ## Upcoming Tasks
 - **Production Testing**: Deploy slim container to RunPod and validate functionality

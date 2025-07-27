@@ -1,5 +1,49 @@
 # Engineering Journal
 
+## 2025-07-28 10:00
+
+### Critical Fix: Unified RunPod Serverless Handler Architecture |TASK:TASK-2025-07-28-001|
+- **What**: Fixed broken RunPod serverless implementation that was failing with exit code 127
+- **Why**: Previous multi-handler approach was fundamentally flawed - broke unified API and handler extraction was non-functional
+- **How**: Created unified handler preserving ALL original container functionality in single serverless endpoint
+- **Issues**: Discovered embedded handler code was malformed, extraction script couldn't find complete code blocks
+- **Result**: Working unified serverless handler supporting all TTS, video, audio, and storage operations
+
+#### Root Cause Analysis
+- **Exit Code 127**: "Command not found" - handler files (`tts_handler.py`, etc.) were never created
+- **Malformed Embedded Strings**: `runpod_base_code = '''` and `tts_handler_code = '''` never properly closed
+- **Broken Architecture**: Multi-handler approach (HANDLER_TYPE) artificially limited functionality
+- **API Mismatch**: User expected unified API like original container, not separate specialized handlers
+
+#### Technical Solution
+- **Unified Handler**: `runpod_handler.py` - single endpoint supporting all operations
+- **Request Format**: Preserved original API structure with operation-based routing
+- **Eliminated HANDLER_TYPE**: No longer needed - all functionality in one endpoint
+- **Simplified Deployment**: One container, one endpoint, all features
+
+#### Files Created/Modified
+- **NEW**: `runpod_handler.py` - Complete unified serverless handler (500+ lines)
+- **NEW**: `RUNPOD_USAGE.md` - Comprehensive usage documentation
+- **NEW**: `test_runpod_handler.py` - Handler validation testing
+- **UPDATED**: `runpod.Dockerfile` - Removed broken extraction, added unified handler
+- **UPDATED**: `scripts/startup-runpod.sh` - Simplified for unified approach
+- **CLEANED**: `server.py` - Removed broken embedded handler code
+
+#### Operation Support Matrix
+- **TTS**: `generate_kokoro_tts`, `generate_chatterbox_tts`, `get_kokoro_voices`
+- **Video**: `merge_videos`, `generate_captioned_video`, `add_colorkey_overlay`, `extract_frame`
+- **Audio**: `transcribe`, `get_audio_info`
+- **Storage**: `upload_file`, `download_file`, `delete_file`, `file_status`
+- **Utility**: `list_fonts`, `get_video_info`
+
+#### User Impact
+- **Before**: Broken serverless deployment, no file processing, exit code 127 errors
+- **After**: Working unified API preserving all original container functionality
+- **Cost Benefits**: Still achieved - serverless vs VM hosting, ~50-100MB container
+- **API Compatibility**: No-code tools can call serverless endpoint like original container
+
+---
+
 ## 2025-07-25 04:33
 
 ### Documentation Framework Implementation

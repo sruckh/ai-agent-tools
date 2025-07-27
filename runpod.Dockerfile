@@ -27,20 +27,14 @@ COPY scripts/startup-runpod.sh /app/scripts/
 COPY scripts/setup-backblaze-storage.sh /app/scripts/
 RUN chmod +x /app/scripts/*.sh
 
-# Create runpod_handlers directory
-RUN mkdir -p runpod_handlers
-
-# Copy and run handler extraction script
-COPY scripts/extract-handlers.py /app/scripts/
-RUN python3 /app/scripts/extract-handlers.py
+# Copy unified RunPod handler
+COPY runpod_handler.py /app/runpod_handler.py
 
 # Environment configuration for RunPod
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app:$PYTHONPATH
 ENV RUNPOD_SERVERLESS=true
-ENV HANDLER_TYPE=tts
 ENV RUNTIME_INSTALL=true
-ENV RUNPOD_OPTIMIZED=true
 # Note: Backblaze B2 credentials will be set via RunPod endpoint environment variables:
 # BACKBLAZE_KEY_ID, BACKBLAZE_APPLICATION_KEY, BACKBLAZE_BUCKET, BACKBLAZE_ENDPOINT
 
