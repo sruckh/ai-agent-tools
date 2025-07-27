@@ -10,13 +10,20 @@ echo "🚀 Starting RunPod handler..."
 HANDLER_TYPE=${HANDLER_TYPE:-tts}
 RUNTIME_INSTALL=${RUNTIME_INSTALL:-true}
 RUNPOD_OPTIMIZED=${RUNPOD_OPTIMIZED:-true}
-CACHE_DIR=${CACHE_DIR:-/runpod-volume}
 
-# Create cache directory
-mkdir -p "$CACHE_DIR"
+# Validate required Backblaze environment variables
+if [ -z "$BACKBLAZE_KEY_ID" ] || [ -z "$BACKBLAZE_APPLICATION_KEY" ] || [ -z "$BACKBLAZE_BUCKET" ] || [ -z "$BACKBLAZE_ENDPOINT" ]; then
+    echo "❌ Missing required Backblaze B2 environment variables:"
+    echo "   BACKBLAZE_KEY_ID, BACKBLAZE_APPLICATION_KEY, BACKBLAZE_BUCKET, BACKBLAZE_ENDPOINT"
+    echo "   Please set these environment variables in your RunPod endpoint configuration."
+    exit 1
+fi
 
-# Check if dependencies are already installed (for persistent volumes)
-DEPS_INSTALLED_FLAG="$CACHE_DIR/.deps_installed"
+echo "🔗 Setting up Backblaze B2 persistent storage..."
+source /app/scripts/setup-backblaze-storage.sh
+
+# Check if dependencies are already installed using Backblaze flag
+DEPS_INSTALLED_FLAG="$LOCAL_CACHE_DIR/.deps_installed"
 
 if [ -f "$DEPS_INSTALLED_FLAG" ]; then
     echo "✅ Dependencies already installed, skipping installation"

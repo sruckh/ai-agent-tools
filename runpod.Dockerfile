@@ -24,6 +24,7 @@ COPY requirements.txt /app/requirements.txt
 # Copy runtime installation scripts
 COPY scripts/install-runpod-deps.sh /app/scripts/
 COPY scripts/startup-runpod.sh /app/scripts/
+COPY scripts/setup-backblaze-storage.sh /app/scripts/
 RUN chmod +x /app/scripts/*.sh
 
 # Create runpod_handlers directory
@@ -40,7 +41,8 @@ ENV RUNPOD_SERVERLESS=true
 ENV HANDLER_TYPE=tts
 ENV RUNTIME_INSTALL=true
 ENV RUNPOD_OPTIMIZED=true
-ENV CACHE_DIR=/runpod-volume
+# Note: Backblaze B2 credentials will be set via RunPod endpoint environment variables:
+# BACKBLAZE_KEY_ID, BACKBLAZE_APPLICATION_KEY, BACKBLAZE_BUCKET, BACKBLAZE_ENDPOINT
 
 # Health check (lightweight - using only standard library)
 HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \

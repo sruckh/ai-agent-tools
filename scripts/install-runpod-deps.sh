@@ -7,12 +7,19 @@ set -e
 echo "🚀 Installing RunPod-specific dependencies..."
 
 # Environment variables
-CACHE_DIR=${CACHE_DIR:-/runpod-volume}
 HANDLER_TYPE=${HANDLER_TYPE:-tts}
-PIP_CACHE=${PIP_CACHE:-$CACHE_DIR/pip}
 
-# Create cache directories
-mkdir -p "$PIP_CACHE" "$CACHE_DIR/models"
+# Set up Backblaze B2 storage first
+echo "🔗 Setting up persistent storage..."
+source /app/scripts/setup-backblaze-storage.sh
+
+# Use cache directories from Backblaze setup
+PIP_CACHE="$PIP_CACHE_DIR"
+MODELS_CACHE="$MODELS_CACHE_DIR"
+
+echo "📁 Using cache directories:"
+echo "  PIP Cache: $PIP_CACHE"
+echo "  Models Cache: $MODELS_CACHE"
 
 echo "📦 Installing system dependencies for handler: $HANDLER_TYPE"
 
