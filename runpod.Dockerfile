@@ -29,18 +29,9 @@ RUN chmod +x /app/scripts/*.sh
 # Create runpod_handlers directory
 RUN mkdir -p runpod_handlers
 
-# Extract handler code (lightweight operation using only Python standard library)
-RUN python3 -c "import re; \
-with open('server.py', 'r') as f: content = f.read(); \
-base_match = re.search(r\"\"\"runpod_base_code = '''(.*?)'''\"\"\", content, re.DOTALL); \
-if base_match: \
-    with open('runpod_handlers/runpod_base.py', 'w') as f: f.write(base_match.group(1)); \
-tts_match = re.search(r\"\"\"tts_handler_code = '''(.*?)'''\"\"\", content, re.DOTALL); \
-if tts_match: \
-    with open('runpod_handlers/tts_handler.py', 'w') as f: f.write(tts_match.group(1)); \
-video_match = re.search(r\"\"\"video_handler_code = '''(.*?)'''\"\"\", content, re.DOTALL); \
-if video_match: \
-    with open('runpod_handlers/video_handler.py', 'w') as f: f.write(video_match.group(1))"
+# Copy and run handler extraction script
+COPY scripts/extract-handlers.py /app/scripts/
+RUN python3 /app/scripts/extract-handlers.py
 
 # Environment configuration for RunPod
 ENV PYTHONUNBUFFERED=1

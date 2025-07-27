@@ -34,24 +34,25 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Extract metadata for Docker
+    - name: Extract metadata for RunPod Serverless
       id: meta
       uses: docker/metadata-action@v5
       with:
         images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         tags: |
-          type=ref,event=branch
-          type=ref,event=pr
-          type=sha,prefix=sha-
-          type=raw,value=latest,enable={{is_default_branch}}
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}
+          type=raw,value=runpod-serverless,enable={{is_default_branch}}
+          type=raw,value=serverless,enable={{is_default_branch}}
+          type=sha,prefix=runpod-
+          type=ref,event=pr,prefix=runpod-pr-
 
-    - name: Build and push Docker image (Standard)
+
+
+    - name: Build and push RunPod Serverless image
+      id: build-runpod
       uses: docker/build-push-action@v5
       with:
         context: .
-        file: ./Dockerfile
+        file: ./runpod.Dockerfile
         platforms: linux/amd64
         push: ${{ github.event_name != 'pull_request' }}
         tags: ${{ steps.meta.outputs.tags }}
@@ -59,37 +60,7 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
-    - name: Build and push Docker image (CUDA)
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        file: ./cuda.Dockerfile
-        platforms: linux/amd64
-        push: ${{ github.event_name != 'pull_request' }}
-        tags: |
-          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-cuda
-          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cuda
-        labels: ${{ steps.meta.outputs.labels }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-
-    - name: Build and push RunPod Serverless image
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        file: ./runpod.Dockerfile
-        platforms: linux/amd64
-        push: ${{ github.event_name != 'pull_request' }}
-        tags: |
-          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:runpod-serverless
-          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:serverless
-        labels: ${{ steps.meta.outputs.labels }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-
     - name: Image digest
       if: github.event_name != 'pull_request'
       run: |
-        echo "Standard image digest: ${{ steps.build-standard.outputs.digest }}"
-        echo "CUDA image digest: ${{ steps.build-cuda.outputs.digest }}"
         echo "RunPod serverless image digest: ${{ steps.build-runpod.outputs.digest }}"

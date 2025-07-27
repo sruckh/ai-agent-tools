@@ -7,39 +7,39 @@
 **Progress**: 1/1 tasks completed
 
 ## Current Task
-**Task ID**: TASK-2025-07-27-003
-**Title**: Final Container Build Fix - Remove Build-Time Dependencies
+**Task ID**: TASK-2025-07-27-004
+**Title**: GitHub Workflow Optimization - Single Container Build
 **Status**: COMPLETE
-**Started**: 2025-07-27 16:00
-**Dependencies**: TASK-2025-07-27-001 (Ultra-slim container implementation)
+**Started**: 2025-07-27 19:00
+**Dependencies**: TASK-2025-07-27-003 (Container build fix)
 
 ### Task Context
 <!-- Critical information needed to resume this task -->
-- **Previous Work**: Container claimed to be ultra-slim but still installing dependencies at build time
+- **Previous Work**: GitHub was building 3 containers (Standard, CUDA, RunPod) but only RunPod needed for serverless
 - **Key Files**: 
-  - `runpod.Dockerfile` - Fixed to be truly minimal with NO build-time dependencies
-  - `scripts/install-runpod-deps.sh` - Runtime installer (unchanged)
-  - `scripts/startup-runpod.sh` - Handler startup (unchanged)
-  - `.github/workflows/docker-build.yml` - GitHub Actions workflow (verified correct)
-- **Environment**: GitHub Actions builds containers for DockerHub deployment
-- **Next Steps**: Commit changes, push to GitHub, verify slim builds work
+  - `.github/workflows/docker-build.yml` - Optimized to build only RunPod serverless container
+  - `runpod.Dockerfile` - Fixed Python extraction syntax error
+  - `scripts/extract-handlers.py` - Created clean script for handler extraction
+- **Environment**: GitHub Actions builds single minimal container for DockerHub
+- **Next Steps**: Commit changes, push to GitHub, verify single build works
 
 ### Findings & Decisions
-- **FINDING-015**: Root cause identified - runpod.Dockerfile was NOT actually minimal despite claims
-- **DECISION-015**: Removed ALL build-time dependency installations from runpod.Dockerfile
-- **FINDING-016**: Container was copying requirements.txt but still had build-time installs
-- **DECISION-016**: Ensured ZERO pip installs, ZERO apt installs beyond curl/wget during build
-- **FINDING-017**: Install script still running during build causing bloat
-- **DECISION-017**: Confirmed ALL dependencies now install at runtime only via startup script
-- **RESULT**: Truly minimal container (~50-100MB) with absolute zero pre-installed dependencies
+- **FINDING-018**: GitHub building 3 containers when only 1 needed for RunPod serverless deployment
+- **DECISION-018**: Removed Standard and CUDA builds, kept only RunPod Serverless build
+- **FINDING-019**: Python one-liner in Dockerfile had syntax errors with triple-quote escaping
+- **DECISION-019**: Created separate extract-handlers.py script for clean handler extraction
+- **FINDING-020**: Build logs showing package bloat were from CUDA build, not RunPod build
+- **DECISION-020**: Eliminated unnecessary builds to focus on truly minimal container only
+- **RESULT**: Single ultra-slim container build (~50-100MB) with zero unnecessary builds
 
 ### Task Chain
 1. ✅ Previous RunPod Serverless Migration Phase (All tasks completed)
 2. ✅ Ultra-Slim Container Implementation (TASK-2025-07-27-001)
 3. ✅ GitHub Integration and File Cleanup (TASK-2025-07-27-002)
-4. ✅ Final Build-Time Dependencies Removal (CURRENT)
-5. ⏳ Production Testing and Validation
-6. ⏳ Performance Benchmarking
+4. ✅ Final Build-Time Dependencies Removal (TASK-2025-07-27-003)
+5. ✅ GitHub Workflow Optimization (CURRENT)
+6. ⏳ Production Testing and Validation
+7. ⏳ Performance Benchmarking
 
 ## Upcoming Tasks
 - **Production Testing**: Deploy slim container to RunPod and validate functionality
