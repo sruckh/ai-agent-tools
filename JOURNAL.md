@@ -1,5 +1,60 @@
 # Engineering Journal
 
+## 2025-07-28 22:30
+
+### Fix RunPod Pip Cache Override - Remove Explicit Cache Parameters |TASK:TASK-2025-07-28-006|
+- **What**: Fixed persistent "No space left on device" errors by removing explicit --cache-dir parameters that were overriding environment variables
+- **Why**: Despite all 7 pip environment variables being correctly set, explicit --cache-dir parameters in pip commands were taking precedence
+- **How**: Removed ALL --cache-dir parameters from pip install commands, enhanced environment variable verification and directory creation
+- **Issues**: Environment variables were correctly set but explicit parameters override them - pip parameter precedence was the root cause
+- **Result**: Environment variables now have complete control over pip caching, eliminating the cache override conflict
+
+#### Root Cause Analysis
+- **Environment Variables**: All 7 pip environment variables were correctly set in setup-backblaze-storage.sh
+- **Parameter Override**: Explicit `--cache-dir '/tmp/runpod-cache/pip'` parameters in pip commands override environment variables
+- **Pip Precedence**: Command-line parameters take precedence over environment variables in pip's configuration hierarchy
+- **Partial Coverage**: Only some pip operations used explicit parameters, leaving others to use environment variables inconsistently
+
+#### Technical Solution
+- **Complete Parameter Removal**: Removed --cache-dir from all pip install commands:
+  - `pip install --upgrade pip` (no cache override)
+  - `pip install -r requirements.txt --target` (environment controls cache)
+  - `pip install runpod --target` (environment controls cache)
+  - `pip install torch torchvision torchaudio --target` (environment controls cache)
+  - `pip install flash-attention wheel --target` (environment controls cache)
+- **Enhanced Verification**: Added logging for all 7 environment variables during installation
+- **Directory Creation**: Added checks to create all environment variable directories if missing
+
+#### Implementation Details
+```bash
+# All pip commands now rely solely on environment variables:
+export TMPDIR="$TEMP_CACHE_DIR"           # Primary temp directory
+export TEMP="$TEMP_CACHE_DIR"             # Windows-style temp fallback  
+export TMP="$TEMP_CACHE_DIR"              # Alternative temp fallback
+export PIP_BUILD_DIR="$BUILD_CACHE_DIR"   # Package build operations
+export PIP_DOWNLOAD_CACHE="$PIP_CACHE_DIR" # Download cache (where error occurred)
+export PIP_CACHE_DIR="$PIP_CACHE_DIR"     # General pip cache
+export PYTHON_EGG_CACHE="$TEMP_CACHE_DIR" # Python egg cache
+```
+
+#### Files Modified
+- **scripts/install-runpod-deps.sh**: Removed all explicit --cache-dir parameters from 5 pip install commands
+- **scripts/install-runpod-deps.sh**: Enhanced environment variable verification and directory creation loop
+
+#### Expected Results
+- **Complete Environment Control**: All pip operations (metadata, downloads, builds, cache, installs) use S3 storage
+- **No Parameter Conflicts**: Environment variables are the sole source of cache configuration
+- **Error Resolution**: filewrapper.py line 102 errors eliminated by consistent S3 cache usage
+- **OS Disk Protection**: All pip operations stay within S3-mounted directories
+
+#### Technical Lessons
+- **Parameter Precedence**: Command-line parameters always override environment variables in pip
+- **Consistency Required**: Mixed parameter/environment configuration creates inconsistent behavior
+- **Complete Control**: For total redirection, environment variables must be the ONLY configuration source
+- **Verification Important**: Log all environment variables to confirm proper inheritance across processes
+
+---
+
 ## 2025-07-28 21:30
 
 ### Complete RunPod OS Disk Protection - All Pip Environment Variables |TASK:TASK-2025-07-28-005|

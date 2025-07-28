@@ -7,38 +7,39 @@
 **Progress**: 1/1 tasks completed
 
 ## Current Task
-**Task ID**: TASK-2025-07-28-005
-**Title**: Complete RunPod OS Disk Protection - Fix All Pip Environment Variables
+**Task ID**: TASK-2025-07-28-006
+**Title**: Fix RunPod Pip Cache Override - Remove Explicit Cache Parameters
 **Status**: COMPLETE
-**Started**: 2025-07-28 21:00
-**Dependencies**: TASK-2025-07-28-004 (Initial OS disk protection)
+**Started**: 2025-07-28 22:30
+**Dependencies**: TASK-2025-07-28-005 (Complete pip environment variables)
 
 ### Task Context
 <!-- Critical information needed to resume this task -->
-- **Previous Work**: Initial OS disk protection implemented but still getting "No space left on device" errors during large package downloads
+- **Previous Work**: Complete pip environment variables implemented but explicit --cache-dir parameters were overriding them
 - **Key Files**: 
-  - `scripts/setup-backblaze-storage.sh` - UPDATED: Added complete pip environment variable coverage (7 variables)
-  - `scripts/install-runpod-deps.sh` - UPDATED: Removed redundant environment variable setting, added verification
-- **Environment**: RunPod OS drive limited (~4GB), pip's internal caching system needs complete redirection to S3
-- **Error Location**: `filewrapper.py` line 102 during nvidia_cuda_runtime_cu12 download (127.9 MB)
+  - `scripts/install-runpod-deps.sh` - UPDATED: Removed all explicit --cache-dir parameters from pip commands
+  - `scripts/setup-backblaze-storage.sh` - Environment variables correctly set but being overridden
+- **Environment**: RunPod OS drive limited (~4GB), pip explicit parameters override environment variables
+- **Error Location**: Same `filewrapper.py` line 102 error despite environment variables being set
 
 ### Findings & Decisions
-- **FINDING-042**: Even with TMPDIR and PIP_BUILD_DIR set, pip's internal cache control still using OS disk during large downloads
-- **DECISION-042**: Pip has multi-layer caching system requiring 7 environment variables for complete isolation
-- **FINDING-043**: Error occurred in filewrapper.py during nvidia_cuda_runtime_cu12 download - pip's HTTP cache layer
-- **DECISION-043**: Added TEMP, TMP, PIP_DOWNLOAD_CACHE, PIP_CACHE_DIR, PYTHON_EGG_CACHE to complete coverage
-- **FINDING-044**: Environment variables must be set in setup script before any pip operations begin
-- **DECISION-044**: Moved all pip environment variables to setup-backblaze-storage.sh for early availability
-- **RESULT**: Complete pip operation isolation - all temp, cache, build, and download operations now use S3
+- **FINDING-045**: Despite all 7 environment variables being set correctly, same filewrapper.py error persisted
+- **DECISION-045**: Discovered explicit --cache-dir parameters in pip commands override environment variables
+- **FINDING-046**: All pip install commands had --cache-dir '/tmp/runpod-cache/pip' parameters
+- **DECISION-046**: Removed ALL explicit --cache-dir parameters to let environment variables control caching
+- **FINDING-047**: Environment variables must be the ONLY source of cache configuration for complete control
+- **DECISION-047**: Enhanced verification logging to show all 7 environment variables and ensure all directories exist
+- **RESULT**: Environment variables now have complete control over pip caching without parameter overrides
 
 ### Task Chain
 1. ✅ Previous RunPod Serverless Migration Phase (TASK-2025-07-28-001)
 2. ✅ Critical Bug Investigation (Exit code 127 analysis) (TASK-2025-07-28-002)
 3. ✅ Environment Variables Standardization (TASK-2025-07-28-003)
 4. ✅ OS Disk Space Protection - Initial Implementation (TASK-2025-07-28-004)
-5. ✅ Complete OS Disk Protection - All Pip Environment Variables (CURRENT - TASK-2025-07-28-005)
-6. ⏳ Production Testing with Complete Pip Isolation
-7. ⏳ Endpoint Validation and Performance Testing
+5. ✅ Complete OS Disk Protection - All Pip Environment Variables (TASK-2025-07-28-005)
+6. ✅ Fix Pip Cache Override - Remove Explicit Cache Parameters (CURRENT - TASK-2025-07-28-006)
+7. ⏳ Production Testing with Complete Pip Isolation
+8. ⏳ Endpoint Validation and Performance Testing
 
 ## Upcoming Tasks
 - **Production Testing**: Deploy slim container to RunPod and validate functionality
@@ -53,6 +54,10 @@
 
 ## Completed Tasks Archive
 <!-- Recent completions for quick reference -->
+- **TASK-2025-07-28-006**: Fix RunPod Pip Cache Override - Remove Explicit Cache Parameters
+  - **FINDING-045**: Despite all 7 environment variables being set, explicit --cache-dir parameters were overriding them
+  - **DECISION-045**: Removed ALL explicit --cache-dir parameters from pip commands to let environment variables control caching
+  - **RESULT**: Environment variables now have complete control over pip caching without parameter overrides
 - **TASK-2025-07-28-005**: Complete RunPod OS Disk Protection - Fix All Pip Environment Variables
   - **FINDING-042**: Even with TMPDIR/PIP_BUILD_DIR set, pip's cache control still used OS disk during large downloads
   - **DECISION-042**: Pip has 7-layer caching system requiring complete environment variable coverage

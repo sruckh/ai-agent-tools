@@ -24,20 +24,24 @@ echo "  Packages Install: $PACKAGES_DIR"
 export PYTHONPATH="$PACKAGES_DIR:$PYTHONPATH"
 echo "🐍 PYTHONPATH updated to include: $PACKAGES_DIR"
 
-# Verify pip temporary directories are properly set (done in setup-backblaze-storage.sh)
-echo "📁 Pip temporary directories (set by setup script):"
+# Verify ALL pip environment variables are properly set (done in setup-backblaze-storage.sh)
+echo "📁 ALL pip environment variables (set by setup script):"
 echo "  TMPDIR: $TMPDIR"
+echo "  TEMP: $TEMP"
+echo "  TMP: $TMP"
 echo "  PIP_BUILD_DIR: $PIP_BUILD_DIR"
+echo "  PIP_DOWNLOAD_CACHE: $PIP_DOWNLOAD_CACHE"
+echo "  PIP_CACHE_DIR: $PIP_CACHE_DIR"
+echo "  PYTHON_EGG_CACHE: $PYTHON_EGG_CACHE"
 
-# Ensure temp and build directories exist (they should already be created by setup script)
-if [ ! -d "$TMPDIR" ]; then
-    echo "⚠️  Creating missing TMPDIR: $TMPDIR"
-    mkdir -p "$TMPDIR"
-fi
-if [ ! -d "$PIP_BUILD_DIR" ]; then
-    echo "⚠️  Creating missing PIP_BUILD_DIR: $PIP_BUILD_DIR"
-    mkdir -p "$PIP_BUILD_DIR"
-fi
+# Ensure ALL pip environment directories exist (they should already be created by setup script)
+for dir_var in TMPDIR TEMP TMP PIP_BUILD_DIR PIP_DOWNLOAD_CACHE PIP_CACHE_DIR PYTHON_EGG_CACHE; do
+    dir_path=$(eval echo \$$dir_var)
+    if [ ! -d "$dir_path" ]; then
+        echo "⚠️  Creating missing $dir_var: $dir_path"
+        mkdir -p "$dir_path"
+    fi
+done
 
 echo "📦 Installing minimal system dependencies..."
 
@@ -82,25 +86,25 @@ retry_pip_install() {
 # Install base requirements to S3-mounted directory
 # Upgrade pip first (without --target to ensure system pip is upgraded)
 echo "📦 Upgrading pip..."
-retry_pip_install "pip install --upgrade pip --cache-dir '$PIP_CACHE' --timeout 120"
+retry_pip_install "pip install --upgrade pip --timeout 120"
 
 echo "📦 Installing requirements.txt..."
-retry_pip_install "pip install -r requirements.txt --cache-dir '$PIP_CACHE' --target '$PACKAGES_DIR' --timeout 300"
+retry_pip_install "pip install -r requirements.txt --target '$PACKAGES_DIR' --timeout 300"
 
 # Install RunPod SDK (should already be in requirements.txt but ensure it's there)
 echo "📦 Installing RunPod SDK..."
-retry_pip_install "pip install runpod --cache-dir '$PIP_CACHE' --target '$PACKAGES_DIR' --timeout 120"
+retry_pip_install "pip install runpod --target '$PACKAGES_DIR' --timeout 120"
 
 # Install PyTorch with CUDA support (use RunPod's recommended version)
 echo "🔥 Installing PyTorch with CUDA support for RunPod"
 
 # Install PyTorch with retry logic (large download, needs extra time)
 echo "⚠️  PyTorch is a large download (~2GB), this may take several minutes..."
-retry_pip_install "pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121 --cache-dir '$PIP_CACHE' --target '$PACKAGES_DIR' --timeout 600 --retries 10"
+retry_pip_install "pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121 --target '$PACKAGES_DIR' --timeout 600 --retries 10"
 
 # Install flash-attention with correct Python 3.10 wheel (after other deps to override any conflicts)
 echo "⚡ Installing flash-attention for Python 3.10..."
-retry_pip_install "pip install https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.0.post2/flash_attn-2.8.0.post2+cu12torch2.6cxx11abiFALSE-cp310-cp310-linux_x86_64.whl --cache-dir '$PIP_CACHE' --target '$PACKAGES_DIR' --timeout 300"
+retry_pip_install "pip install https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.0.post2/flash_attn-2.8.0.post2+cu12torch2.6cxx11abiFALSE-cp310-cp310-linux_x86_64.whl --target '$PACKAGES_DIR' --timeout 300"
 
 echo "✅ RunPod dependencies installed successfully"
 
