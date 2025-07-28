@@ -44,6 +44,53 @@
 
 ---
 
+## 2025-07-28 15:30
+
+### RunPod Dependency Installation Fix - Exit Code 127 Resolution |TASK:TASK-2025-07-28-002|
+- **What**: Fixed RunPod serverless exit code 127 caused by failed CUDA installation in dependency script
+- **Why**: Previous installation script tried to install CUDA toolkit on RunPod which already has CUDA pre-installed
+- **How**: Simplified installation script to minimal approach - only essential packages, leveraged RunPod's existing CUDA
+- **Issues**: Over-engineered script with flash-attention wheels, complex CUDA setup conflicting with RunPod environment
+- **Result**: Eliminated exit code 127, created proper endpoint testing, confirmed Backblaze caching works correctly
+
+#### Root Cause Analysis
+- **Exit Code 127**: "Command not found" - CUDA installation failing during `install-runpod-deps.sh` execution
+- **CUDA Conflicts**: RunPod serverless already has CUDA 12.x pre-installed, attempting manual installation caused conflicts
+- **Over-Engineering**: Script included flash-attention wheels, complex environment setup, unnecessary for minimal approach
+- **Testing Gap**: Previous test script only tested local handler, not actual deployed serverless endpoint
+
+#### Technical Solution  
+- **Simplified Installation**: Removed CUDA toolkit installation, flash-attention wheels, complex setup
+- **Minimal Dependencies**: Only install libsndfile1 and ffmpeg system packages beyond Python requirements
+- **Proper Testing**: Created `test_runpod_endpoint.py` that accepts actual serverless URL for real endpoint testing
+- **Leveraged RunPod**: Use existing CUDA installation, focus on minimal additional packages
+
+#### Files Modified
+- **FIXED**: `scripts/install-runpod-deps.sh` - Removed CUDA installation, simplified to minimal approach
+- **NEW**: `test_runpod_endpoint.py` - Proper endpoint testing script accepting serverless URL
+- **VALIDATED**: Backblaze caching configuration for Python packages, models, dependencies
+
+#### Dependency Strategy
+- **System Packages**: Only libsndfile1, ffmpeg (essential for audio/video processing)  
+- **Python Packages**: Use requirements.txt with Backblaze caching for pip packages
+- **PyTorch**: Install with CUDA support using RunPod's recommended cu121 index
+- **Models**: Cache in Backblaze for faster subsequent container starts
+- **CUDA**: Use RunPod's pre-installed CUDA toolkit, no manual installation
+
+#### Performance Benefits
+- **Cold Start**: Faster dependency installation without CUDA conflicts
+- **Caching**: Backblaze stores pip packages, models, dependencies for subsequent runs
+- **Container Size**: Maintains ~50-100MB minimal size approach
+- **Resource Usage**: Leverages RunPod's optimized GPU environment
+
+#### User Testing Instructions
+1. Deploy RunPod endpoint with updated container  
+2. Get endpoint URL: `https://api.runpod.ai/v2/your-endpoint-id/runsync`
+3. Test with: `python test_runpod_endpoint.py <endpoint-url>`
+4. Validate TTS generation, storage operations, utility functions
+
+---
+
 ## 2025-07-25 04:33
 
 ### Documentation Framework Implementation

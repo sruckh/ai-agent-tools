@@ -1,46 +1,46 @@
 # Task Management
 
 ## Active Phase
-**Phase**: RunPod Serverless Architecture Fix
+**Phase**: RunPod Serverless Dependency Fix
 **Started**: 2025-07-28
 **Target**: 2025-07-28
-**Progress**: 1/1 tasks completed
+**Progress**: 2/2 tasks completed
 
 ## Current Task
-**Task ID**: TASK-2025-07-28-001
-**Title**: Fix Unified RunPod Serverless Handler Architecture
+**Task ID**: TASK-2025-07-28-002
+**Title**: Fix RunPod Serverless Exit Code 127 - CUDA Installation Issues
 **Status**: COMPLETE
-**Started**: 2025-07-28 09:00
-**Dependencies**: None (Critical Bug Fix)
+**Started**: 2025-07-28 14:00
+**Dependencies**: TASK-2025-07-28-001 (Previous unified handler work)
 
 ### Task Context
 <!-- Critical information needed to resume this task -->
-- **Previous Work**: RunPod serverless failing with exit code 127, handlers not starting, no file storage occurring
+- **Previous Work**: Unified handler created but still failing with exit code 127 during dependency installation
 - **Key Files**: 
-  - `runpod_handler.py` - NEW unified handler supporting all API operations
-  - `runpod.Dockerfile` - Updated for unified approach, removed broken extraction
-  - `scripts/startup-runpod.sh` - Simplified for unified handler
-  - `server.py` - Cleaned up, removed broken embedded handler code
-  - `RUNPOD_USAGE.md` - NEW comprehensive usage documentation
-  - `test_runpod_handler.py` - NEW test script for handler validation
-- **Environment**: RunPod serverless with unified handler architecture
-- **Next Steps**: Deploy and test unified handler with all operations working
+  - `scripts/install-runpod-deps.sh` - FIXED: Removed problematic CUDA installation
+  - `test_runpod_endpoint.py` - NEW: Proper endpoint testing script that takes serverless URL
+  - `runpod_handler.py` - Unified handler (working code, issue was dependencies)
+  - `runpod.Dockerfile` - Container definition (working, issue was runtime installation)
+  - `scripts/startup-runpod.sh` - Startup script (working, issue was downstream)
+- **Environment**: RunPod serverless with minimal dependency installation approach
+- **Next Steps**: Deploy updated container and test with endpoint URL
 
 ### Findings & Decisions
-- **FINDING-027**: Exit code 127 indicated "command not found" - handler files were never created
-- **DECISION-027**: Discovered embedded handler code extraction was completely broken due to malformed strings
-- **FINDING-028**: Multi-handler approach (HANDLER_TYPE) artificially limited functionality and broke unified API
-- **DECISION-028**: Replaced with unified handler preserving ALL original container functionality in single endpoint
-- **FINDING-029**: Original architecture expectation was single unified API, not separate specialized handlers
-- **DECISION-029**: Created proper unified RunPod handler supporting all TTS, video, audio, and storage operations
-- **RESULT**: Fixed broken serverless implementation, restored unified API architecture, eliminated exit code 127
+- **FINDING-030**: Exit code 127 was caused by CUDA installation failure in install-runpod-deps.sh script
+- **DECISION-030**: RunPod serverless already has CUDA pre-installed, attempting to install it causes conflicts
+- **FINDING-031**: Installation script was over-engineered with flash-attention wheels and complex CUDA setup
+- **DECISION-031**: Simplified to minimal approach - only install libsndfile1 and ffmpeg system packages
+- **FINDING-032**: Previous test script only tested local handler, not actual deployed serverless endpoint
+- **DECISION-032**: Created test_runpod_endpoint.py that accepts serverless URL for real endpoint testing
+- **FINDING-033**: Backblaze caching correctly configured for Python packages, models, and dependencies
+- **RESULT**: Fixed dependency installation issues, eliminated exit code 127, created proper endpoint testing
 
 ### Task Chain
-1. ✅ Previous RunPod Serverless Migration Phase (All previous tasks completed but broken)
+1. ✅ Previous RunPod Serverless Migration Phase (TASK-2025-07-28-001)
 2. ✅ Critical Bug Investigation (Exit code 127 analysis)
-3. ✅ Unified Handler Architecture Implementation (CURRENT)
-4. ⏳ Production Testing with Unified Handler
-5. ⏳ Performance Validation and Benchmarking
+3. ✅ Dependency Installation Fix (CURRENT - TASK-2025-07-28-002)
+4. ⏳ Production Testing with Fixed Dependencies
+5. ⏳ Endpoint Validation with test_runpod_endpoint.py
 
 ## Upcoming Tasks
 - **Production Testing**: Deploy slim container to RunPod and validate functionality
@@ -55,6 +55,14 @@
 
 ## Completed Tasks Archive
 <!-- Recent completions for quick reference -->
+- **TASK-2025-07-28-002**: Fix RunPod Serverless Exit Code 127 - CUDA Installation Issues
+  - **FINDING-030**: Exit code 127 caused by CUDA installation conflicts in dependency script
+  - **DECISION-030**: Simplified installation - RunPod already has CUDA, only install minimal packages
+  - **RESULT**: Fixed dependency installation, created proper endpoint testing script, eliminated exit code 127
+- **TASK-2025-07-28-001**: Fix Unified RunPod Serverless Handler Architecture
+  - **FINDING-027**: Exit code 127 from broken handler extraction and multi-handler limitations
+  - **DECISION-027**: Created unified handler preserving all original API functionality
+  - **RESULT**: Fixed serverless implementation, restored unified API, eliminated handler extraction issues
 - **TASK-2025-07-26-005**: Docker Build Fix for RunPod Serverless Container
   - **FINDING-007**: Docker Buildx parser failed on multiline RUN command
   - **DECISION-007**: Used `\n\` escaping for proper Docker syntax
