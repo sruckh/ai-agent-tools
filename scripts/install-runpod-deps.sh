@@ -24,16 +24,20 @@ echo "  Packages Install: $PACKAGES_DIR"
 export PYTHONPATH="$PACKAGES_DIR:$PYTHONPATH"
 echo "🐍 PYTHONPATH updated to include: $PACKAGES_DIR"
 
-# Redirect pip's temporary directories to S3-mounted storage to prevent OS disk filling
-TEMP_DIR="$LOCAL_CACHE_DIR/tmp"
-BUILD_DIR="$LOCAL_CACHE_DIR/build"
-mkdir -p "$TEMP_DIR" "$BUILD_DIR"
+# Verify pip temporary directories are properly set (done in setup-backblaze-storage.sh)
+echo "📁 Pip temporary directories (set by setup script):"
+echo "  TMPDIR: $TMPDIR"
+echo "  PIP_BUILD_DIR: $PIP_BUILD_DIR"
 
-export TMPDIR="$TEMP_DIR"
-export PIP_BUILD_DIR="$BUILD_DIR"
-echo "📁 Pip temporary directories redirected to S3:"
-echo "  TMPDIR: $TEMP_DIR"
-echo "  PIP_BUILD_DIR: $BUILD_DIR"
+# Ensure temp and build directories exist (they should already be created by setup script)
+if [ ! -d "$TMPDIR" ]; then
+    echo "⚠️  Creating missing TMPDIR: $TMPDIR"
+    mkdir -p "$TMPDIR"
+fi
+if [ ! -d "$PIP_BUILD_DIR" ]; then
+    echo "⚠️  Creating missing PIP_BUILD_DIR: $PIP_BUILD_DIR"
+    mkdir -p "$PIP_BUILD_DIR"
+fi
 
 echo "📦 Installing minimal system dependencies..."
 

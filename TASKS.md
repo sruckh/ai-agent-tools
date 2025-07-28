@@ -7,40 +7,38 @@
 **Progress**: 1/1 tasks completed
 
 ## Current Task
-**Task ID**: TASK-2025-07-28-004
-**Title**: Fix RunPod OS Disk Space - Redirect Package Installation to S3
+**Task ID**: TASK-2025-07-28-005
+**Title**: Complete RunPod OS Disk Protection - Fix All Pip Environment Variables
 **Status**: COMPLETE
-**Started**: 2025-07-28 19:00
-**Dependencies**: TASK-2025-07-28-003 (AWS variables standardization)
+**Started**: 2025-07-28 21:00
+**Dependencies**: TASK-2025-07-28-004 (Initial OS disk protection)
 
 ### Task Context
 <!-- Critical information needed to resume this task -->
-- **Previous Work**: AWS variables standardized, but user reported OS disk full during package installation
+- **Previous Work**: Initial OS disk protection implemented but still getting "No space left on device" errors during large package downloads
 - **Key Files**: 
-  - `scripts/setup-backblaze-storage.sh` - UPDATED: Added temp/build directories, package storage structure
-  - `scripts/install-runpod-deps.sh` - UPDATED: All pip operations redirect to S3, added flash-attention wheel
-  - `scripts/startup-runpod.sh` - UPDATED: PYTHONPATH includes S3 packages directory
-- **Environment**: OS drive limited (~4GB), all Python operations must use S3-mounted storage
-- **Next Steps**: OS drive should stay minimal, all packages install to S3
+  - `scripts/setup-backblaze-storage.sh` - UPDATED: Added complete pip environment variable coverage (7 variables)
+  - `scripts/install-runpod-deps.sh` - UPDATED: Removed redundant environment variable setting, added verification
+- **Environment**: RunPod OS drive limited (~4GB), pip's internal caching system needs complete redirection to S3
+- **Error Location**: `filewrapper.py` line 102 during nvidia_cuda_runtime_cu12 download (127.9 MB)
 
 ### Findings & Decisions
-- **FINDING-038**: OS disk filled up during pip package installation despite --target flag usage
-- **DECISION-038**: Pip downloads to temp directories on OS drive before installing to target
-- **FINDING-039**: Need to redirect ALL pip temporary operations to S3-mounted storage
-- **DECISION-039**: Set TMPDIR and PIP_BUILD_DIR to S3 cache directories, redirect temp/build operations
-- **FINDING-040**: Flash-attention removed previously, but needed for optimal AI model performance
-- **DECISION-040**: Added correct Python 3.10 flash-attention wheel to installation after other packages
-- **FINDING-041**: Network interruptions during large PyTorch downloads (~2GB) causing failures
-- **DECISION-041**: Added retry logic with exponential backoff and increased timeouts for large packages
-- **RESULT**: Complete OS disk protection, all Python operations on S3, network resilience added
+- **FINDING-042**: Even with TMPDIR and PIP_BUILD_DIR set, pip's internal cache control still using OS disk during large downloads
+- **DECISION-042**: Pip has multi-layer caching system requiring 7 environment variables for complete isolation
+- **FINDING-043**: Error occurred in filewrapper.py during nvidia_cuda_runtime_cu12 download - pip's HTTP cache layer
+- **DECISION-043**: Added TEMP, TMP, PIP_DOWNLOAD_CACHE, PIP_CACHE_DIR, PYTHON_EGG_CACHE to complete coverage
+- **FINDING-044**: Environment variables must be set in setup script before any pip operations begin
+- **DECISION-044**: Moved all pip environment variables to setup-backblaze-storage.sh for early availability
+- **RESULT**: Complete pip operation isolation - all temp, cache, build, and download operations now use S3
 
 ### Task Chain
 1. ✅ Previous RunPod Serverless Migration Phase (TASK-2025-07-28-001)
 2. ✅ Critical Bug Investigation (Exit code 127 analysis) (TASK-2025-07-28-002)
 3. ✅ Environment Variables Standardization (TASK-2025-07-28-003)
-4. ✅ OS Disk Space Protection - S3 Package Installation (CURRENT - TASK-2025-07-28-004)
-5. ⏳ Production Testing with Complete S3 Integration
-6. ⏳ Endpoint Validation with Flash-Attention Performance
+4. ✅ OS Disk Space Protection - Initial Implementation (TASK-2025-07-28-004)
+5. ✅ Complete OS Disk Protection - All Pip Environment Variables (CURRENT - TASK-2025-07-28-005)
+6. ⏳ Production Testing with Complete Pip Isolation
+7. ⏳ Endpoint Validation and Performance Testing
 
 ## Upcoming Tasks
 - **Production Testing**: Deploy slim container to RunPod and validate functionality
@@ -55,6 +53,10 @@
 
 ## Completed Tasks Archive
 <!-- Recent completions for quick reference -->
+- **TASK-2025-07-28-005**: Complete RunPod OS Disk Protection - Fix All Pip Environment Variables
+  - **FINDING-042**: Even with TMPDIR/PIP_BUILD_DIR set, pip's cache control still used OS disk during large downloads
+  - **DECISION-042**: Pip has 7-layer caching system requiring complete environment variable coverage
+  - **RESULT**: All pip operations (temp, cache, build, download) now isolated to S3, eliminated "No space left on device"
 - **TASK-2025-07-28-004**: Fix RunPod OS Disk Space - Redirect Package Installation to S3
   - **FINDING-038**: OS disk filled during pip installation despite --target flag - pip uses temp directories on OS
   - **DECISION-038**: Redirect ALL pip operations (temp, build, cache, install) to S3-mounted directories

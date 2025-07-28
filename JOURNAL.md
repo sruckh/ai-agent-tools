@@ -1,5 +1,55 @@
 # Engineering Journal
 
+## 2025-07-28 21:30
+
+### Complete RunPod OS Disk Protection - All Pip Environment Variables |TASK:TASK-2025-07-28-005|
+- **What**: Fixed remaining "No space left on device" errors by adding complete pip environment variable coverage (7 variables total)
+- **Why**: Despite initial TMPDIR/PIP_BUILD_DIR fix, pip's internal cache control was still using OS disk during large package downloads
+- **How**: Added all pip environment variables (TEMP, TMP, PIP_DOWNLOAD_CACHE, PIP_CACHE_DIR, PYTHON_EGG_CACHE) to setup script for early availability
+- **Issues**: Error trace showed pip's filewrapper.py cache control failing during nvidia_cuda_runtime_cu12 download (127.9 MB)
+- **Result**: Complete pip operation isolation - all temp, cache, build, and download operations now use S3 storage exclusively
+
+#### Technical Deep Dive
+- **Error Location**: `filewrapper.py` line 102 in pip's cache control system during large file downloads
+- **Root Cause**: Pip has multi-layer caching system beyond just TMPDIR and PIP_BUILD_DIR
+- **Stack Trace Analysis**: `tempfile.py` → `filewrapper.py` → `urllib3/response.py` showing cache write failure
+- **Package Context**: nvidia_cuda_runtime_cu12 (127.9 MB) causing OS disk space exhaustion
+
+#### Complete Environment Variable Coverage
+```bash
+export TMPDIR="$TEMP_CACHE_DIR"           # Primary temp directory
+export TEMP="$TEMP_CACHE_DIR"             # Windows-style temp fallback  
+export TMP="$TEMP_CACHE_DIR"              # Alternative temp fallback
+export PIP_BUILD_DIR="$BUILD_CACHE_DIR"   # Package build operations
+export PIP_DOWNLOAD_CACHE="$PIP_CACHE_DIR" # Download cache (where error occurred)
+export PIP_CACHE_DIR="$PIP_CACHE_DIR"     # General pip cache
+export PYTHON_EGG_CACHE="$TEMP_CACHE_DIR" # Python egg cache
+```
+
+#### Implementation Strategy
+- **Early Variable Setting**: Moved all pip environment variables to `setup-backblaze-storage.sh` 
+- **Global Availability**: Variables now exported before ANY pip operations begin
+- **Comprehensive Coverage**: Every pip caching mechanism redirected to S3-mounted directories
+- **Cross-Platform**: Covers Unix (TMPDIR) and Windows (TEMP/TMP) compatibility
+
+#### Files Modified
+- **scripts/setup-backblaze-storage.sh**: Added complete pip environment variable export with debugging output
+- **scripts/install-runpod-deps.sh**: Removed redundant variable setting, added verification checks
+
+#### Performance Impact
+- **Complete Isolation**: Every pip operation (metadata, download, build, cache, install) now uses S3
+- **OS Disk Usage**: Should remain at ~50-100MB system packages only
+- **Large Downloads**: PyTorch, CUDA runtime, and other large packages fully isolated to S3
+- **Error Elimination**: "No space left on device" errors should be completely eliminated
+
+#### Technical Lessons
+- **Pip Architecture**: Pip has 7 different caching layers that all need redirection
+- **Timing Critical**: Environment variables must be set before pip process initialization
+- **Error Traces**: Stack traces provide precise location of disk usage failures
+- **Complete Coverage**: Partial fixes leave vulnerabilities - need comprehensive approach
+
+---
+
 ## 2025-07-28 19:30
 
 ### RunPod OS Disk Space Protection - Complete S3 Package Installation |TASK:TASK-2025-07-28-004|

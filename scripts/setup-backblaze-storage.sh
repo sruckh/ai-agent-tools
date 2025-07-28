@@ -121,6 +121,27 @@ export TEMP_CACHE_DIR
 export BUILD_CACHE_DIR
 export LOCAL_CACHE_DIR
 
+# CRITICAL: Set ALL pip environment variables to redirect EVERY operation to S3
+# This prevents pip from using OS disk for ANY temporary files during downloads/builds
+export TMPDIR="$TEMP_CACHE_DIR"
+export TEMP="$TEMP_CACHE_DIR"
+export TMP="$TEMP_CACHE_DIR"
+export PIP_BUILD_DIR="$BUILD_CACHE_DIR"
+export PIP_DOWNLOAD_CACHE="$PIP_CACHE_DIR"
+export PIP_CACHE_DIR="$PIP_CACHE_DIR"
+
+# Additional Python tempfile environment variables
+export PYTHON_EGG_CACHE="$TEMP_CACHE_DIR"
+
+echo "🔧 Complete pip environment variables set for OS disk protection:"
+echo "  TMPDIR: $TMPDIR"
+echo "  TEMP: $TEMP"
+echo "  TMP: $TMP"
+echo "  PIP_BUILD_DIR: $PIP_BUILD_DIR"
+echo "  PIP_DOWNLOAD_CACHE: $PIP_DOWNLOAD_CACHE"
+echo "  PIP_CACHE_DIR: $PIP_CACHE_DIR"
+echo "  PYTHON_EGG_CACHE: $PYTHON_EGG_CACHE"
+
 # Create cleanup function for exit
 cleanup_and_backup() {
     echo "🔄 Backing up cache data to Backblaze B2..."
