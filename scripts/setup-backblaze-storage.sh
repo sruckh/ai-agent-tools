@@ -18,15 +18,21 @@ LOCAL_CACHE_DIR=${LOCAL_CACHE_DIR:-/tmp/runpod-cache}
 MODELS_CACHE_DIR="$LOCAL_CACHE_DIR/models"
 PIP_CACHE_DIR="$LOCAL_CACHE_DIR/pip"
 DEPS_CACHE_DIR="$LOCAL_CACHE_DIR/deps"
+PACKAGES_CACHE_DIR="$LOCAL_CACHE_DIR/packages"
+TEMP_CACHE_DIR="$LOCAL_CACHE_DIR/tmp"
+BUILD_CACHE_DIR="$LOCAL_CACHE_DIR/build"
 
 # S3 paths (Backblaze bucket structure)
 S3_CACHE_PREFIX="runpod-cache"
 S3_MODELS_PATH="$S3_CACHE_PREFIX/models"
 S3_PIP_PATH="$S3_CACHE_PREFIX/pip"
 S3_DEPS_PATH="$S3_CACHE_PREFIX/deps"
+S3_PACKAGES_PATH="$S3_CACHE_PREFIX/packages"
+S3_TEMP_PATH="$S3_CACHE_PREFIX/tmp"
+S3_BUILD_PATH="$S3_CACHE_PREFIX/build"
 
 # Create local cache directories
-mkdir -p "$MODELS_CACHE_DIR" "$PIP_CACHE_DIR" "$DEPS_CACHE_DIR"
+mkdir -p "$MODELS_CACHE_DIR" "$PIP_CACHE_DIR" "$DEPS_CACHE_DIR" "$PACKAGES_CACHE_DIR" "$TEMP_CACHE_DIR" "$BUILD_CACHE_DIR"
 
 # AWS CLI is already configured via environment variables
 # AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_DEFAULT_REGION, AWS_ENDPOINT_URL
@@ -92,11 +98,15 @@ if [ -f "$SETUP_FLAG" ]; then
     sync_from_s3 "$S3_MODELS_PATH" "$MODELS_CACHE_DIR" "models"
     sync_from_s3 "$S3_PIP_PATH" "$PIP_CACHE_DIR" "pip packages"
     sync_from_s3 "$S3_DEPS_PATH" "$DEPS_CACHE_DIR" "dependencies"
+    sync_from_s3 "$S3_PACKAGES_PATH" "$PACKAGES_CACHE_DIR" "installed packages"
+    # Note: temp and build directories are ephemeral, no need to sync from S3
 else
     echo "🆕 First-time setup, downloading any existing cached data..."
     sync_from_s3 "$S3_MODELS_PATH" "$MODELS_CACHE_DIR" "models"
     sync_from_s3 "$S3_PIP_PATH" "$PIP_CACHE_DIR" "pip packages"
     sync_from_s3 "$S3_DEPS_PATH" "$DEPS_CACHE_DIR" "dependencies"
+    sync_from_s3 "$S3_PACKAGES_PATH" "$PACKAGES_CACHE_DIR" "installed packages"
+    # Note: temp and build directories are ephemeral, no need to sync from S3
     
     # Mark setup as complete
     touch "$SETUP_FLAG"
@@ -106,6 +116,9 @@ fi
 export MODELS_CACHE_DIR
 export PIP_CACHE_DIR  
 export DEPS_CACHE_DIR
+export PACKAGES_CACHE_DIR
+export TEMP_CACHE_DIR
+export BUILD_CACHE_DIR
 export LOCAL_CACHE_DIR
 
 # Create cleanup function for exit
@@ -114,6 +127,11 @@ cleanup_and_backup() {
     sync_to_s3 "$MODELS_CACHE_DIR" "$S3_MODELS_PATH" "models"
     sync_to_s3 "$PIP_CACHE_DIR" "$S3_PIP_PATH" "pip packages"
     sync_to_s3 "$DEPS_CACHE_DIR" "$S3_DEPS_PATH" "dependencies"
+    sync_to_s3 "$PACKAGES_CACHE_DIR" "$S3_PACKAGES_PATH" "installed packages"
+    
+    # Clean up ephemeral temp directories (don't backup to S3)
+    echo "🧹 Cleaning up temporary directories..."
+    rm -rf "$TEMP_CACHE_DIR" "$BUILD_CACHE_DIR" 2>/dev/null || true
     echo "✅ Backup completed"
 }
 

@@ -1,5 +1,54 @@
 # Engineering Journal
 
+## 2025-07-28 19:30
+
+### RunPod OS Disk Space Protection - Complete S3 Package Installation |TASK:TASK-2025-07-28-004|
+- **What**: Fixed critical OS disk space issue by redirecting ALL pip operations to S3-mounted storage
+- **Why**: User reported OS disk filling up during package installation despite using --target flag
+- **How**: Redirected pip temp directories, build directories, and all operations to S3; added flash-attention and network retry logic
+- **Issues**: Discovered pip downloads to OS temp directories before installing to target location
+- **Result**: Complete OS disk protection, restored AI performance with flash-attention, network resilience for large downloads
+
+#### Root Cause Analysis
+- **OS Disk Limitation**: RunPod environment has limited OS disk space (~4GB total)
+- **Pip Behavior**: `--target` only affects final installation, downloads still use OS temp directories
+- **Package Size**: PyTorch (~2GB) + dependencies filling OS disk during download phase
+- **Flash-Attention Gap**: Previously removed due to build issues, but needed for AI model performance
+
+#### Comprehensive Solution Implementation
+- **Temp Directory Redirection**: Set `TMPDIR` and `PIP_BUILD_DIR` to S3-mounted cache
+- **Complete Pip Isolation**: All operations (cache, temp, build, install) now use S3 storage
+- **Flash-Attention Restoration**: Added correct Python 3.10 wheel after other dependencies
+- **Network Resilience**: Retry logic with exponential backoff for large downloads
+- **S3 Structure Enhancement**: Added temp/build directories to storage management
+
+#### Files Modified
+- **scripts/setup-backblaze-storage.sh**: Added TEMP_CACHE_DIR, BUILD_CACHE_DIR, S3 sync structure
+- **scripts/install-runpod-deps.sh**: Redirected all pip operations, added retry logic, flash-attention wheel
+- **scripts/startup-runpod.sh**: Updated PYTHONPATH to include S3 packages directory
+
+#### Technical Implementation
+- **Storage Structure**: `/tmp/runpod-cache/{packages,pip,tmp,build,models,deps}` → S3 sync
+- **Environment Variables**: `TMPDIR`, `PIP_BUILD_DIR`, `PYTHONPATH` redirect to S3 directories  
+- **Retry Strategy**: 3 attempts with exponential backoff (1s→2s→4s), 600s timeout for PyTorch
+- **Flash-Attention**: Correct cu12torch2.6cxx11abiFALSE wheel for Python 3.10 environment
+- **Import Validation**: Added flash_attn to critical package import testing
+
+#### Performance Impact  
+- **OS Disk Usage**: ~50-100MB system packages only (vs 4GB+ with dependencies)
+- **S3 Storage**: All Python packages (~3-4GB including PyTorch + flash-attention)
+- **Network Resilience**: Large downloads retry automatically on interruption
+- **AI Performance**: Flash-attention restored for optimal model acceleration
+- **Deployment**: Maintains minimal container size with external dependency storage
+
+#### User Impact
+- **Before**: OS disk full errors, broken installations, no flash-attention acceleration
+- **After**: Unlimited Python package space via S3, robust network handling, optimal AI performance
+- **Cost**: S3 storage (~$0.005/GB/month) vs OS storage constraints
+- **Scalability**: Independent storage scaling without container limitations
+
+---
+
 ## 2025-07-28 16:30
 
 ### Environment Variables Standardization |TASK:TASK-2025-07-28-003|

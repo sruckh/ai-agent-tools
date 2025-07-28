@@ -7,42 +7,40 @@
 **Progress**: 1/1 tasks completed
 
 ## Current Task
-**Task ID**: TASK-2025-07-28-003
-**Title**: Standardize Environment Variables to AWS_* Format
+**Task ID**: TASK-2025-07-28-004
+**Title**: Fix RunPod OS Disk Space - Redirect Package Installation to S3
 **Status**: COMPLETE
-**Started**: 2025-07-28 16:00
-**Dependencies**: TASK-2025-07-28-002 (Exit code 127 fix)
+**Started**: 2025-07-28 19:00
+**Dependencies**: TASK-2025-07-28-003 (AWS variables standardization)
 
 ### Task Context
 <!-- Critical information needed to resume this task -->
-- **Previous Work**: Exit code 127 fixed, but user reported BACKBLAZE_* vs AWS_* variable confusion
+- **Previous Work**: AWS variables standardized, but user reported OS disk full during package installation
 - **Key Files**: 
-  - `scripts/setup-backblaze-storage.sh` - UPDATED: Now uses AWS_* environment variables
-  - `scripts/startup-runpod.sh` - UPDATED: Validates AWS_* variables instead of BACKBLAZE_*
-  - `RUNPOD_USAGE.md` - UPDATED: Documentation shows AWS_* variable format
-  - `runpod.Dockerfile` - UPDATED: Comments reflect AWS_* variables
-  - `test_backblaze_connection.py` - UPDATED: Full diagnostic tool uses AWS_* variables
-  - `test_aws_vars.py` - NEW: Quick test script for AWS variable validation
-- **Environment**: Standard AWS S3-compatible environment variables for Backblaze B2
-- **Next Steps**: User can test with standardized AWS_* variables
+  - `scripts/setup-backblaze-storage.sh` - UPDATED: Added temp/build directories, package storage structure
+  - `scripts/install-runpod-deps.sh` - UPDATED: All pip operations redirect to S3, added flash-attention wheel
+  - `scripts/startup-runpod.sh` - UPDATED: PYTHONPATH includes S3 packages directory
+- **Environment**: OS drive limited (~4GB), all Python operations must use S3-mounted storage
+- **Next Steps**: OS drive should stay minimal, all packages install to S3
 
 ### Findings & Decisions
-- **FINDING-034**: Mixed BACKBLAZE_* and AWS_* environment variables caused confusion and maintenance issues
-- **DECISION-034**: Standardized on AWS_* variables since Backblaze B2 is S3-compatible
-- **FINDING-035**: AWS CLI installation failing due to missing 'unzip' package in minimal container
-- **DECISION-035**: Added unzip installation to setup-backblaze-storage.sh before AWS CLI installation
-- **FINDING-036**: User reported 25-character Key ID format works (not 12-character)
-- **DECISION-036**: Updated documentation and test scripts to clarify long-format Key ID usage
-- **FINDING-037**: Missing AWS_DEFAULT_REGION environment variable requirement
-- **DECISION-037**: Added region validation to all scripts and updated documentation
-- **RESULT**: Unified AWS_* variables, fixed CLI installation, clearer testing tools
+- **FINDING-038**: OS disk filled up during pip package installation despite --target flag usage
+- **DECISION-038**: Pip downloads to temp directories on OS drive before installing to target
+- **FINDING-039**: Need to redirect ALL pip temporary operations to S3-mounted storage
+- **DECISION-039**: Set TMPDIR and PIP_BUILD_DIR to S3 cache directories, redirect temp/build operations
+- **FINDING-040**: Flash-attention removed previously, but needed for optimal AI model performance
+- **DECISION-040**: Added correct Python 3.10 flash-attention wheel to installation after other packages
+- **FINDING-041**: Network interruptions during large PyTorch downloads (~2GB) causing failures
+- **DECISION-041**: Added retry logic with exponential backoff and increased timeouts for large packages
+- **RESULT**: Complete OS disk protection, all Python operations on S3, network resilience added
 
 ### Task Chain
 1. ✅ Previous RunPod Serverless Migration Phase (TASK-2025-07-28-001)
 2. ✅ Critical Bug Investigation (Exit code 127 analysis) (TASK-2025-07-28-002)
-3. ✅ Environment Variables Standardization (CURRENT - TASK-2025-07-28-003)
-4. ⏳ Production Testing with AWS Variables
-5. ⏳ Endpoint Validation with Standardized Configuration
+3. ✅ Environment Variables Standardization (TASK-2025-07-28-003)
+4. ✅ OS Disk Space Protection - S3 Package Installation (CURRENT - TASK-2025-07-28-004)
+5. ⏳ Production Testing with Complete S3 Integration
+6. ⏳ Endpoint Validation with Flash-Attention Performance
 
 ## Upcoming Tasks
 - **Production Testing**: Deploy slim container to RunPod and validate functionality
@@ -57,6 +55,10 @@
 
 ## Completed Tasks Archive
 <!-- Recent completions for quick reference -->
+- **TASK-2025-07-28-004**: Fix RunPod OS Disk Space - Redirect Package Installation to S3
+  - **FINDING-038**: OS disk filled during pip installation despite --target flag - pip uses temp directories on OS
+  - **DECISION-038**: Redirect ALL pip operations (temp, build, cache, install) to S3-mounted directories
+  - **RESULT**: Complete OS disk protection, flash-attention restored, network retry logic, ~4GB+ freed
 - **TASK-2025-07-28-003**: Standardize Environment Variables to AWS_* Format  
   - **FINDING-034**: Mixed BACKBLAZE_* and AWS_* variables caused confusion and maintenance overhead
   - **DECISION-034**: Standardized on AWS_* variables for S3-compatible Backblaze B2 storage

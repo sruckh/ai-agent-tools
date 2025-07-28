@@ -38,8 +38,10 @@ else
     echo "✅ All dependencies installed successfully"
 fi
 
-# Set up Python path
-export PYTHONPATH=/app:$PYTHONPATH
+# Set up Python path to include both app and packages directories
+PACKAGES_DIR="$LOCAL_CACHE_DIR/packages"
+export PYTHONPATH=/app:$PACKAGES_DIR:$PYTHONPATH
+echo "🐍 PYTHONPATH set to: $PYTHONPATH"
 
 # Health check
 echo "🏥 Running health check..."

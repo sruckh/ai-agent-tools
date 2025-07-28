@@ -13,10 +13,27 @@ source /app/scripts/setup-backblaze-storage.sh
 # Use cache directories from Backblaze setup
 PIP_CACHE="$PIP_CACHE_DIR"
 MODELS_CACHE="$MODELS_CACHE_DIR"
+PACKAGES_DIR="$PACKAGES_CACHE_DIR"
 
 echo "📁 Using cache directories:"
 echo "  PIP Cache: $PIP_CACHE"
 echo "  Models Cache: $MODELS_CACHE"
+echo "  Packages Install: $PACKAGES_DIR"
+
+# Set PYTHONPATH to include our custom package installation directory
+export PYTHONPATH="$PACKAGES_DIR:$PYTHONPATH"
+echo "🐍 PYTHONPATH updated to include: $PACKAGES_DIR"
+
+# Redirect pip's temporary directories to S3-mounted storage to prevent OS disk filling
+TEMP_DIR="$LOCAL_CACHE_DIR/tmp"
+BUILD_DIR="$LOCAL_CACHE_DIR/build"
+mkdir -p "$TEMP_DIR" "$BUILD_DIR"
+
+export TMPDIR="$TEMP_DIR"
+export PIP_BUILD_DIR="$BUILD_DIR"
+echo "📁 Pip temporary directories redirected to S3:"
+echo "  TMPDIR: $TEMP_DIR"
+echo "  PIP_BUILD_DIR: $BUILD_DIR"
 
 echo "📦 Installing minimal system dependencies..."
 
@@ -31,17 +48,99 @@ rm -rf /var/lib/apt/lists/*
 
 echo "🐍 Installing Python dependencies..."
 
-# Install base requirements
-pip install --upgrade pip --cache-dir "$PIP_CACHE"
-pip install -r requirements.txt --cache-dir "$PIP_CACHE"
+# Function to retry pip install with exponential backoff
+retry_pip_install() {
+    local cmd="$1"
+    local max_attempts=3
+    local attempt=1
+    local delay=1
+    
+    while [ $attempt -le $max_attempts ]; do
+        echo "🔄 Attempt $attempt/$max_attempts: $cmd"
+        if eval "$cmd"; then
+            echo "✅ Installation successful on attempt $attempt"
+            return 0
+        else
+            echo "❌ Attempt $attempt failed"
+            if [ $attempt -lt $max_attempts ]; then
+                echo "⏳ Waiting ${delay}s before retry..."
+                sleep $delay
+                delay=$((delay * 2))  # Exponential backoff
+            fi
+        fi
+        attempt=$((attempt + 1))
+    done
+    
+    echo "❌ All attempts failed for: $cmd"
+    return 1
+}
+
+# Install base requirements to S3-mounted directory
+# Upgrade pip first (without --target to ensure system pip is upgraded)
+echo "📦 Upgrading pip..."
+retry_pip_install "pip install --upgrade pip --cache-dir '$PIP_CACHE' --timeout 120"
+
+echo "📦 Installing requirements.txt..."
+retry_pip_install "pip install -r requirements.txt --cache-dir '$PIP_CACHE' --target '$PACKAGES_DIR' --timeout 300"
 
 # Install RunPod SDK (should already be in requirements.txt but ensure it's there)
-pip install runpod --cache-dir "$PIP_CACHE"
+echo "📦 Installing RunPod SDK..."
+retry_pip_install "pip install runpod --cache-dir '$PIP_CACHE' --target '$PACKAGES_DIR' --timeout 120"
 
 # Install PyTorch with CUDA support (use RunPod's recommended version)
 echo "🔥 Installing PyTorch with CUDA support for RunPod"
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121 --cache-dir "$PIP_CACHE"
+
+# Install PyTorch with retry logic (large download, needs extra time)
+echo "⚠️  PyTorch is a large download (~2GB), this may take several minutes..."
+retry_pip_install "pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121 --cache-dir '$PIP_CACHE' --target '$PACKAGES_DIR' --timeout 600 --retries 10"
+
+# Install flash-attention with correct Python 3.10 wheel (after other deps to override any conflicts)
+echo "⚡ Installing flash-attention for Python 3.10..."
+retry_pip_install "pip install https://github.com/Dao-AILab/flash-attention/releases/download/v2.8.0.post2/flash_attn-2.8.0.post2+cu12torch2.6cxx11abiFALSE-cp310-cp310-linux_x86_64.whl --cache-dir '$PIP_CACHE' --target '$PACKAGES_DIR' --timeout 300"
 
 echo "✅ RunPod dependencies installed successfully"
+
+# Verify packages are installed in the correct location
+echo "📍 Verifying package installation location..."
+if [ -d "$PACKAGES_DIR" ] && [ "$(ls -A "$PACKAGES_DIR")" ]; then
+    echo "✅ Packages found in S3-mounted directory: $PACKAGES_DIR"
+    echo "📊 Disk usage of packages directory:"
+    du -sh "$PACKAGES_DIR" 2>/dev/null || echo "Unable to calculate size"
+    echo "📁 Sample packages installed:"
+    ls -la "$PACKAGES_DIR" | head -10
+else
+    echo "❌ No packages found in target directory: $PACKAGES_DIR"
+    echo "🔍 Checking system Python site-packages (should be minimal)..."
+    python -c "import site; print('System site-packages:', site.getsitepackages())"
+fi
+
 echo "📋 Installed packages summary:"
 pip list | grep -E "(torch|runpod|kokoro|chatterbox|faster|soundfile)"
+
+echo "🔍 Python path verification:"
+python -c "import sys; print('PYTHONPATH entries:'); [print(f'  {p}') for p in sys.path]"
+
+echo "🧪 Testing critical package imports..."
+python -c "
+import sys
+import os
+
+# Test critical imports
+test_packages = ['runpod', 'torch', 'numpy', 'flash_attn']
+failed_imports = []
+
+for package in test_packages:
+    try:
+        __import__(package)
+        print(f'✅ {package} - OK')
+    except ImportError as e:
+        print(f'❌ {package} - FAILED: {e}')
+        failed_imports.append(package)
+
+if failed_imports:
+    print(f'⚠️  Warning: {len(failed_imports)} packages failed to import: {failed_imports}')
+    print('This may indicate installation issues or missing dependencies.')
+    sys.exit(1)
+else:
+    print('✅ All critical packages imported successfully')
+"
