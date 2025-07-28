@@ -111,12 +111,13 @@ All requests to your RunPod serverless endpoint should use this format:
 
 Set these in your RunPod endpoint configuration:
 
-### Backblaze B2 Storage (Required)
+### S3-Compatible Storage (Required)
 ```bash
-BACKBLAZE_KEY_ID=your_key_id
-BACKBLAZE_APPLICATION_KEY=your_app_key  
-BACKBLAZE_BUCKET=your_bucket_name
-BACKBLAZE_ENDPOINT=your_endpoint_url
+AWS_ACCESS_KEY_ID=your_access_key_id
+AWS_SECRET_ACCESS_KEY=your_secret_access_key  
+AWS_S3_BUCKET=your_bucket_name
+AWS_ENDPOINT_URL=https://s3.us-west-004.backblazeb2.com
+AWS_DEFAULT_REGION=us-west-004
 ```
 
 ### No HANDLER_TYPE Needed!

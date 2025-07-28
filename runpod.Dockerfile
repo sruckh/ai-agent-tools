@@ -35,8 +35,8 @@ ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app:$PYTHONPATH
 ENV RUNPOD_SERVERLESS=true
 ENV RUNTIME_INSTALL=true
-# Note: Backblaze B2 credentials will be set via RunPod endpoint environment variables:
-# BACKBLAZE_KEY_ID, BACKBLAZE_APPLICATION_KEY, BACKBLAZE_BUCKET, BACKBLAZE_ENDPOINT
+# Note: S3-compatible storage credentials will be set via RunPod endpoint environment variables:
+# AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_S3_BUCKET, AWS_ENDPOINT_URL, AWS_DEFAULT_REGION
 
 # Health check (lightweight - using only standard library)
 HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \

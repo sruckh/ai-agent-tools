@@ -6,11 +6,12 @@ set -e
 
 echo "🔗 Setting up Backblaze B2 storage for persistent data..."
 
-# Required environment variables for Backblaze B2
-: ${BACKBLAZE_KEY_ID:?'BACKBLAZE_KEY_ID environment variable is required'}
-: ${BACKBLAZE_APPLICATION_KEY:?'BACKBLAZE_APPLICATION_KEY environment variable is required'}
-: ${BACKBLAZE_BUCKET:?'BACKBLAZE_BUCKET environment variable is required'}
-: ${BACKBLAZE_ENDPOINT:?'BACKBLAZE_ENDPOINT environment variable is required (e.g., s3.us-west-004.backblazeb2.com)'}
+# Required environment variables for S3-compatible storage (Backblaze B2)
+: ${AWS_ACCESS_KEY_ID:?'AWS_ACCESS_KEY_ID environment variable is required'}
+: ${AWS_SECRET_ACCESS_KEY:?'AWS_SECRET_ACCESS_KEY environment variable is required'}
+: ${AWS_S3_BUCKET:?'AWS_S3_BUCKET environment variable is required'}
+: ${AWS_ENDPOINT_URL:?'AWS_ENDPOINT_URL environment variable is required (e.g., https://s3.us-west-004.backblazeb2.com)'}
+: ${AWS_DEFAULT_REGION:?'AWS_DEFAULT_REGION environment variable is required (e.g., us-west-004)'}
 
 # Local cache directories
 LOCAL_CACHE_DIR=${LOCAL_CACHE_DIR:-/tmp/runpod-cache}
@@ -27,28 +28,29 @@ S3_DEPS_PATH="$S3_CACHE_PREFIX/deps"
 # Create local cache directories
 mkdir -p "$MODELS_CACHE_DIR" "$PIP_CACHE_DIR" "$DEPS_CACHE_DIR"
 
-# Configure AWS CLI for Backblaze B2
-export AWS_ACCESS_KEY_ID="$BACKBLAZE_KEY_ID"
-export AWS_SECRET_ACCESS_KEY="$BACKBLAZE_APPLICATION_KEY"
-export AWS_DEFAULT_REGION="us-west-004"  # Backblaze B2 region
-export AWS_ENDPOINT_URL="https://$BACKBLAZE_ENDPOINT"
+# AWS CLI is already configured via environment variables
+# AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_DEFAULT_REGION, AWS_ENDPOINT_URL
 
 echo "📋 Checking AWS CLI configuration..."
 # Install AWS CLI if not present
 if ! command -v aws &> /dev/null; then
     echo "Installing AWS CLI..."
+    # Install unzip first (needed for AWS CLI installation)
+    apt-get update && apt-get install -y --no-install-recommends unzip
     curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
     unzip -q awscliv2.zip
     ./aws/install
     rm -rf aws awscliv2.zip
+    # Clean up
+    rm -rf /var/lib/apt/lists/*
 fi
 
-# Test connection to Backblaze B2
-echo "🔍 Testing Backblaze B2 connection..."
-if aws s3 ls "s3://$BACKBLAZE_BUCKET" --endpoint-url="https://$BACKBLAZE_ENDPOINT" > /dev/null 2>&1; then
-    echo "✅ Successfully connected to Backblaze B2 bucket: $BACKBLAZE_BUCKET"
+# Test connection to S3-compatible storage
+echo "🔍 Testing S3 connection..."
+if aws s3 ls "s3://$AWS_S3_BUCKET" > /dev/null 2>&1; then
+    echo "✅ Successfully connected to S3 bucket: $AWS_S3_BUCKET"
 else
-    echo "❌ Failed to connect to Backblaze B2. Please check your credentials and bucket name."
+    echo "❌ Failed to connect to S3 storage. Please check your credentials and bucket name."
     exit 1
 fi
 
@@ -58,9 +60,8 @@ sync_from_s3() {
     local local_path="$2"
     local description="$3"
     
-    echo "📥 Syncing $description from Backblaze B2..."
-    if aws s3 sync "s3://$BACKBLAZE_BUCKET/$s3_path" "$local_path" \
-        --endpoint-url="https://$BACKBLAZE_ENDPOINT" \
+    echo "📥 Syncing $description from S3..."
+    if aws s3 sync "s3://$AWS_S3_BUCKET/$s3_path" "$local_path" \
         --only-show-errors; then
         echo "✅ $description synced successfully"
     else
@@ -74,10 +75,9 @@ sync_to_s3() {
     local s3_path="$2"
     local description="$3"
     
-    echo "📤 Backing up $description to Backblaze B2..."
+    echo "📤 Backing up $description to S3..."
     if [ -d "$local_path" ] && [ "$(ls -A "$local_path")" ]; then
-        aws s3 sync "$local_path" "s3://$BACKBLAZE_BUCKET/$s3_path" \
-            --endpoint-url="https://$BACKBLAZE_ENDPOINT" \
+        aws s3 sync "$local_path" "s3://$AWS_S3_BUCKET/$s3_path" \
             --only-show-errors
         echo "✅ $description backed up successfully"
     else
@@ -120,7 +120,7 @@ cleanup_and_backup() {
 # Set up trap to backup data on exit
 trap cleanup_and_backup EXIT
 
-echo "✅ Backblaze B2 storage setup complete"
+echo "✅ S3-compatible storage setup complete"
 echo "📁 Local cache directory: $LOCAL_CACHE_DIR"
-echo "🪣 Backblaze bucket: $BACKBLAZE_BUCKET"
-echo "🔗 Endpoint: $BACKBLAZE_ENDPOINT"
+echo "🪣 S3 bucket: $AWS_S3_BUCKET"
+echo "🔗 Endpoint: $AWS_ENDPOINT_URL"

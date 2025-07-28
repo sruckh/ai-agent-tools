@@ -1,46 +1,48 @@
 # Task Management
 
 ## Active Phase
-**Phase**: RunPod Serverless Dependency Fix
+**Phase**: Environment Variables Standardization
 **Started**: 2025-07-28
 **Target**: 2025-07-28
-**Progress**: 2/2 tasks completed
+**Progress**: 1/1 tasks completed
 
 ## Current Task
-**Task ID**: TASK-2025-07-28-002
-**Title**: Fix RunPod Serverless Exit Code 127 - CUDA Installation Issues
+**Task ID**: TASK-2025-07-28-003
+**Title**: Standardize Environment Variables to AWS_* Format
 **Status**: COMPLETE
-**Started**: 2025-07-28 14:00
-**Dependencies**: TASK-2025-07-28-001 (Previous unified handler work)
+**Started**: 2025-07-28 16:00
+**Dependencies**: TASK-2025-07-28-002 (Exit code 127 fix)
 
 ### Task Context
 <!-- Critical information needed to resume this task -->
-- **Previous Work**: Unified handler created but still failing with exit code 127 during dependency installation
+- **Previous Work**: Exit code 127 fixed, but user reported BACKBLAZE_* vs AWS_* variable confusion
 - **Key Files**: 
-  - `scripts/install-runpod-deps.sh` - FIXED: Removed problematic CUDA installation
-  - `test_runpod_endpoint.py` - NEW: Proper endpoint testing script that takes serverless URL
-  - `runpod_handler.py` - Unified handler (working code, issue was dependencies)
-  - `runpod.Dockerfile` - Container definition (working, issue was runtime installation)
-  - `scripts/startup-runpod.sh` - Startup script (working, issue was downstream)
-- **Environment**: RunPod serverless with minimal dependency installation approach
-- **Next Steps**: Deploy updated container and test with endpoint URL
+  - `scripts/setup-backblaze-storage.sh` - UPDATED: Now uses AWS_* environment variables
+  - `scripts/startup-runpod.sh` - UPDATED: Validates AWS_* variables instead of BACKBLAZE_*
+  - `RUNPOD_USAGE.md` - UPDATED: Documentation shows AWS_* variable format
+  - `runpod.Dockerfile` - UPDATED: Comments reflect AWS_* variables
+  - `test_backblaze_connection.py` - UPDATED: Full diagnostic tool uses AWS_* variables
+  - `test_aws_vars.py` - NEW: Quick test script for AWS variable validation
+- **Environment**: Standard AWS S3-compatible environment variables for Backblaze B2
+- **Next Steps**: User can test with standardized AWS_* variables
 
 ### Findings & Decisions
-- **FINDING-030**: Exit code 127 was caused by CUDA installation failure in install-runpod-deps.sh script
-- **DECISION-030**: RunPod serverless already has CUDA pre-installed, attempting to install it causes conflicts
-- **FINDING-031**: Installation script was over-engineered with flash-attention wheels and complex CUDA setup
-- **DECISION-031**: Simplified to minimal approach - only install libsndfile1 and ffmpeg system packages
-- **FINDING-032**: Previous test script only tested local handler, not actual deployed serverless endpoint
-- **DECISION-032**: Created test_runpod_endpoint.py that accepts serverless URL for real endpoint testing
-- **FINDING-033**: Backblaze caching correctly configured for Python packages, models, and dependencies
-- **RESULT**: Fixed dependency installation issues, eliminated exit code 127, created proper endpoint testing
+- **FINDING-034**: Mixed BACKBLAZE_* and AWS_* environment variables caused confusion and maintenance issues
+- **DECISION-034**: Standardized on AWS_* variables since Backblaze B2 is S3-compatible
+- **FINDING-035**: AWS CLI installation failing due to missing 'unzip' package in minimal container
+- **DECISION-035**: Added unzip installation to setup-backblaze-storage.sh before AWS CLI installation
+- **FINDING-036**: User reported 25-character Key ID format works (not 12-character)
+- **DECISION-036**: Updated documentation and test scripts to clarify long-format Key ID usage
+- **FINDING-037**: Missing AWS_DEFAULT_REGION environment variable requirement
+- **DECISION-037**: Added region validation to all scripts and updated documentation
+- **RESULT**: Unified AWS_* variables, fixed CLI installation, clearer testing tools
 
 ### Task Chain
 1. ✅ Previous RunPod Serverless Migration Phase (TASK-2025-07-28-001)
-2. ✅ Critical Bug Investigation (Exit code 127 analysis)
-3. ✅ Dependency Installation Fix (CURRENT - TASK-2025-07-28-002)
-4. ⏳ Production Testing with Fixed Dependencies
-5. ⏳ Endpoint Validation with test_runpod_endpoint.py
+2. ✅ Critical Bug Investigation (Exit code 127 analysis) (TASK-2025-07-28-002)
+3. ✅ Environment Variables Standardization (CURRENT - TASK-2025-07-28-003)
+4. ⏳ Production Testing with AWS Variables
+5. ⏳ Endpoint Validation with Standardized Configuration
 
 ## Upcoming Tasks
 - **Production Testing**: Deploy slim container to RunPod and validate functionality
@@ -55,6 +57,10 @@
 
 ## Completed Tasks Archive
 <!-- Recent completions for quick reference -->
+- **TASK-2025-07-28-003**: Standardize Environment Variables to AWS_* Format  
+  - **FINDING-034**: Mixed BACKBLAZE_* and AWS_* variables caused confusion and maintenance overhead
+  - **DECISION-034**: Standardized on AWS_* variables for S3-compatible Backblaze B2 storage
+  - **RESULT**: Unified variable naming, fixed AWS CLI installation, created testing tools for validation
 - **TASK-2025-07-28-002**: Fix RunPod Serverless Exit Code 127 - CUDA Installation Issues
   - **FINDING-030**: Exit code 127 caused by CUDA installation conflicts in dependency script
   - **DECISION-030**: Simplified installation - RunPod already has CUDA, only install minimal packages

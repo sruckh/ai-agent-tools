@@ -9,15 +9,15 @@ echo "🚀 Starting RunPod handler..."
 # Environment variables
 RUNTIME_INSTALL=${RUNTIME_INSTALL:-true}
 
-# Validate required Backblaze environment variables
-if [ -z "$BACKBLAZE_KEY_ID" ] || [ -z "$BACKBLAZE_APPLICATION_KEY" ] || [ -z "$BACKBLAZE_BUCKET" ] || [ -z "$BACKBLAZE_ENDPOINT" ]; then
-    echo "❌ Missing required Backblaze B2 environment variables:"
-    echo "   BACKBLAZE_KEY_ID, BACKBLAZE_APPLICATION_KEY, BACKBLAZE_BUCKET, BACKBLAZE_ENDPOINT"
+# Validate required S3-compatible storage environment variables
+if [ -z "$AWS_ACCESS_KEY_ID" ] || [ -z "$AWS_SECRET_ACCESS_KEY" ] || [ -z "$AWS_S3_BUCKET" ] || [ -z "$AWS_ENDPOINT_URL" ] || [ -z "$AWS_DEFAULT_REGION" ]; then
+    echo "❌ Missing required S3-compatible storage environment variables:"
+    echo "   AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_S3_BUCKET, AWS_ENDPOINT_URL, AWS_DEFAULT_REGION"
     echo "   Please set these environment variables in your RunPod endpoint configuration."
     exit 1
 fi
 
-echo "🔗 Setting up Backblaze B2 persistent storage..."
+echo "🔗 Setting up S3-compatible persistent storage..."
 source /app/scripts/setup-backblaze-storage.sh
 
 # Check if dependencies are already installed using Backblaze flag

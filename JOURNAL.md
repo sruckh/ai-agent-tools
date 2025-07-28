@@ -1,5 +1,16 @@
 # Engineering Journal
 
+## 2025-07-28 16:30
+
+### Environment Variables Standardization |TASK:TASK-2025-07-28-003|
+- **What**: Standardized all environment variables from mixed BACKBLAZE_* / AWS_* to unified AWS_* format
+- **Why**: User reported confusion with dual variable naming, maintenance overhead, and inconsistency with S3 standards
+- **How**: Updated all scripts, documentation, and test tools to use standard AWS S3-compatible variable names
+- **Issues**: Had to fix AWS CLI installation (missing unzip), update region requirements, and clarify Key ID format (25-char)
+- **Result**: Unified AWS_* variables, fixed CLI issues, cleaner codebase, better S3 compatibility
+
+---
+
 ## 2025-07-28 10:00
 
 ### Critical Fix: Unified RunPod Serverless Handler Architecture |TASK:TASK-2025-07-28-001|
